@@ -61,6 +61,96 @@ inline void safe_glUniformMatrix4fv(const GLint handle, const GLfloat data[]) {
         glUniformMatrix4fv(handle, 1, GL_FALSE, data);
 }
 
+/* helper function to set projection matrix - don't touch */
+void SetProjectionMatrix() {
+    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
+    safe_glUniformMatrix4fv(shader->getHandle("uProjMatrix"), glm::value_ptr(Projection));
+}
+
+/* camera controls - do not change beyond the current set up to rotate*/
+void SetView() {
+    glm::mat4 Trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0, g_Camtrans));
+    safe_glUniformMatrix4fv(shader->getHandle("uViewMatrix"), glm::value_ptr(Trans));
+}
+
+/* model transforms */
+void SetModel() {
+    glm::mat4 Trans = glm::translate(glm::mat4(1.0f), g_trans);
+    glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), g_angle, glm::vec3(0.0f, 1, 0));
+    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), g_x_angle, glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 com = Trans*RotateY*RotateX;
+    safe_glUniformMatrix4fv(shader->getHandle("uModelMatrix"), glm::value_ptr(com));
+}
+
+
+class Cube : Object3D{
+public:
+    Cube(){
+        
+    }
+
+    void init(){
+        mesh = new Mesh("cube.obj");
+        mesh->init();
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadElementBuffer();
+
+        shader = new Shader("vert.glsl", "frag.glsl");
+        shader->loadHandle("aPosition");
+        shader->loadHandle("aNormal");
+        shader->loadHandle("uProjMatrix");
+        shader->loadHandle("uViewMatrix");
+        shader->loadHandle("uModelMatrix");
+        shader->loadHandle("uLightPos");
+        shader->loadHandle("UaColor");
+        shader->loadHandle("UdColor");
+        shader->loadHandle("UsColor");
+        shader->loadHandle("UeColor");
+        shader->loadHandle("Ushine");
+        shader->loadHandle("uShadeModel");
+        shader->loadHandle("uNormalM");
+        shader->loadHandle("uEye");
+    }
+
+    void draw(){
+        SetView();
+
+        glm::mat4 Trans = glm::translate(glm::mat4(1.0f), glm::vec3(-3, -3, -5));
+        safe_glUniformMatrix4fv(shader->getHandle("uModelMatrix"), glm::value_ptr(Trans));
+
+        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
+        glUniform1i(shader->getHandle("uShadeModel"), g_SM);
+        glUniform1i(shader->getHandle("uNormalM"), g_normal_mode);
+        glUniform3f(shader->getHandle("uEye"), 0, 0, 0);
+
+        // Enable and bind position array for drawing
+        GLSL::enableVertexAttribArray(shader->getHandle("aPosition"));
+        glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer("posBufObj"));
+        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        // Enable and bind normal array for drawing
+        GLSL::enableVertexAttribArray(shader->getHandle("aNormal"));
+        glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer("norBufObj"));
+        glVertexAttribPointer(shader->getHandle("aNormal"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        // Bind index array for drawing
+        int nIndices = (int)mesh->getIndices().size();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getElementBuffer());
+
+        glDrawElements(GL_TRIANGLES, nIndices, GL_UNSIGNED_INT, 0);
+
+        GLSL::disableVertexAttribArray(shader->getHandle("aPosition"));
+        GLSL::disableVertexAttribArray(shader->getHandle("aNormal"));
+    }
+};
+
+Cube myCube;
+
+
+
 /* helper function to send materials to the shader - you must create your own */
 void SetMaterial(int i) {
     glUseProgram(shader->getId());
@@ -110,26 +200,6 @@ void setCurrentObj(int i){
     currentObj = objects[i];
 }
 
-/* helper function to set projection matrix - don't touch */
-void SetProjectionMatrix() {
-    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
-    safe_glUniformMatrix4fv(shader->getHandle("uProjMatrix"), glm::value_ptr(Projection));
-}
-
-/* camera controls - do not change beyond the current set up to rotate*/
-void SetView() {
-    glm::mat4 Trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0, g_Camtrans));
-    safe_glUniformMatrix4fv(shader->getHandle("uViewMatrix"), glm::value_ptr(Trans));
-}
-
-/* model transforms */
-void SetModel() {
-    glm::mat4 Trans = glm::translate(glm::mat4(1.0f), g_trans);
-    glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), g_angle, glm::vec3(0.0f, 1, 0));
-    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), g_x_angle, glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 com = Trans*RotateY*RotateX;
-    safe_glUniformMatrix4fv(shader->getHandle("uModelMatrix"), glm::value_ptr(com));
-}
 
 void initGL()
 {
@@ -291,6 +361,7 @@ void drawGL()
     drawBunny();
     drawEasterEggs();
     drawLightBulb();
+    myCube.draw();
 
     // Disable and unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -409,7 +480,10 @@ int main(int argc, char **argv)
     objects.push_back(Object3D(bunnyMesh, shader));
     objects.push_back(Object3D(cubeMesh, shader));
     objects.push_back(Object3D(sphereMesh, shader));
-
+    
+    myCube = Cube();
+    myCube.init();
+    
     initGL();
     installShaders();
 
