@@ -1,0 +1,9 @@
+*.bak
+*.swp
+*.swo
+*~
+Debug/
+glm/
+*.dll
+*.vcxproj
+*.filters
