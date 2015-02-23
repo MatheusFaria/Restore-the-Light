@@ -5,10 +5,6 @@
 * Code modifed from ZJ Wood
 */
 
-// Base code for program 3 - does not compile as is, needs other files 
-//and shaders but has skeleton for much of the data transfer for shading
-//and traversal of the mesh for computing normals - you must compute normals
-
 #include <iostream>
 #include <cassert>
 #include <vector>
@@ -17,6 +13,7 @@
 #include "mesh.h"
 #include "shader.h"
 #include "object3d.h"
+#include "load_manager.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
@@ -85,19 +82,16 @@ void SetModel() {
 
 class Cube : Object3D{
 public:
-    Cube(){
-        
-    }
+    Cube(){}
 
     void init(){
-        mesh = new Mesh("cube.obj");
-        mesh->init();
+        mesh = LoadManager::getMesh("cube.obj");
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
         loadElementBuffer();
 
-        shader = new Shader("vert.glsl", "frag.glsl");
+        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
         shader->loadHandle("aPosition");
         shader->loadHandle("aNormal");
         shader->loadHandle("uProjMatrix");

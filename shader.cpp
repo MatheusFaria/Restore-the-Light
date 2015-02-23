@@ -23,7 +23,8 @@ GLuint Shader::getId(){
 }
 
 void Shader::loadHandle(std::string handle_name){
-    switch (tolower(handle_name[0])){
+    if (handles.find(handle_name) == handles.end()){
+        switch (tolower(handle_name[0])){
         case 'a':
             handles[handle_name] = GLSL::getAttribLocation(id, handle_name.c_str());
             break;
@@ -33,10 +34,11 @@ void Shader::loadHandle(std::string handle_name){
         default:
             Log::error("Shader::loadHandle", "Your handle name should start with a or u",
                 "uName or aName", handle_name);
+        }
+        if (handles[handle_name] < 0)
+            Log::error("Shader::loadHandle", "Could not load handle",
+            "Existing handle", handle_name);
     }
-    if (handles[handle_name] < 0)
-        Log::error("Shader::loadHandle", "Could not load handle",
-        "Existing handle", handle_name);
 }
 
 GLint Shader::getHandle(std::string handle_name){
