@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "glm/gtc/type_ptr.hpp"
+#include "virtual_camera.h"
 
 Object3D::Object3D() : Object3D(NULL, NULL){
 }
@@ -109,6 +110,7 @@ void Object3D::drawElements(){
 
 void Object3D::addChild(Object3D * child){
     children.push_back(child);
+    child->setParent(this);
 }
 
 void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
@@ -117,14 +119,25 @@ void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
 
 void Object3D::bindModelMatrix(std::string handle){
     if (parent != NULL)
-        bindUniformMatrix4f(shader->getHandle(handle), modelTransform*parent->getModelMatrix());
+        bindUniformMatrix4f(shader->getHandle(handle), parent->getModelMatrix()*modelTransform);
     else
         bindUniformMatrix4f(shader->getHandle(handle), modelTransform);
+}
+
+void Object3D::bindViewMatrix(std::string handle){
+    bindUniformMatrix4f(shader->getHandle(handle), CamManager::currentCam()->getViewMatrix());
+}
+
+void Object3D::bindProjectionMatrix(std::string handle){
+    bindUniformMatrix4f(shader->getHandle(handle), CamManager::currentCam()->projectionMatrix);
 }
 
 void Object3D::draw(){
     glUseProgram(shader->getId());
     
+    bindViewMatrix("uViewMatrix");
+    bindProjectionMatrix("uProjMatrix");
+
     enableAttrArray3f("aPosition", "posBufObj");
     enableAttrArray3f("aNormal", "norBufObj");
     bindElements();

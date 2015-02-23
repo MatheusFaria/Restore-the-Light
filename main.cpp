@@ -15,6 +15,7 @@
 #include "object3d.h"
 #include "load_manager.h"
 #include "material.h"
+#include "virtual_camera.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
@@ -35,32 +36,11 @@ int g_width;
 int g_height;
 float g_Camtrans = -2.5;
 float g_angle = 0, g_x_angle = 0;
-int g_mat_id = 0;
-int g_obj_id = 0;
-int g_mat_quantity = 4;
 glm::vec3 g_trans(0, 0, 0);
 glm::vec3 g_light(0.5, 0.5, 5);
+glm::vec3 mouse_pos(0.0f);
 
 Shader * shader;
-
-/* helper function to make sure your matrix handle is correct */
-inline void safe_glUniformMatrix4fv(const GLint handle, const GLfloat data[]) {
-    if (handle >= 0)
-        glUniformMatrix4fv(handle, 1, GL_FALSE, data);
-}
-
-/* helper function to set projection matrix - don't touch */
-void SetProjectionMatrix() {
-    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
-    safe_glUniformMatrix4fv(shader->getHandle("uProjMatrix"), glm::value_ptr(Projection));
-}
-
-/* camera controls - do not change beyond the current set up to rotate*/
-void SetView() {
-    glm::mat4 Trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0, g_Camtrans));
-    safe_glUniformMatrix4fv(shader->getHandle("uViewMatrix"), glm::value_ptr(Trans));
-}
-
 
 class Cube : public Object3D{
 public:
@@ -91,11 +71,8 @@ public:
     }
 
     void drawObject(){
-        SetProjectionMatrix();
-        SetView();
-
         loadIdentity();
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(-3, -3, -5)));
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.5, -3)));
         bindModelMatrix("uModelMatrix");
 
         Material::SetMaterial(Material::BLUE_PLASTIC, shader);
@@ -139,9 +116,6 @@ public:
     }
 
     void drawObject(){
-        SetProjectionMatrix();
-        SetView();
-
         loadIdentity();
         addTransformation(glm::rotate(glm::mat4(1.0f), g_x_angle, glm::vec3(1.0f, 0.0f, 0.0f)));
         addTransformation(glm::rotate(glm::mat4(1.0f), g_angle, glm::vec3(0.0f, 1, 0)));
@@ -161,8 +135,8 @@ public:
 };
 
 
-Bunny myBunny;
-Cube myCube;
+Bunny * myBunny;
+Cube * myCube;
 
 
 void window_size_callback(GLFWwindow* window, int w, int h){
@@ -184,10 +158,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         g_x_angle += 10;
     if (key == GLFW_KEY_S && action == GLFW_PRESS)
         g_x_angle -= 10;
-
-    //Switches the material
-    if (key == GLFW_KEY_X && action == GLFW_PRESS)
-        g_mat_id = (g_mat_id + 1) % g_mat_quantity;
 
     //Switches between Phong and Goroud
     if (key == GLFW_KEY_Z && action == GLFW_PRESS){
@@ -212,10 +182,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         g_light.z -= 0.25;
     if (key == GLFW_KEY_K && action == GLFW_PRESS)
         g_light.z += 0.25;
+}
 
-    // Change the central shape (bunny, cube, sphere)
-    if (key == GLFW_KEY_G && action == GLFW_PRESS)
-        g_obj_id = (g_obj_id + 1) % 3;
+static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    mouse_pos.x = xpos;
+    mouse_pos.y = ypos;
 }
 
 int main(int argc, char **argv)
@@ -255,6 +227,7 @@ int main(int argc, char **argv)
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
 
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -267,20 +240,28 @@ int main(int argc, char **argv)
     GLSL::checkVersion();
 
     shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-    
-    myCube = Cube();
-    myCube.init();
 
-    myBunny = Bunny();
-    myBunny.init();
+    myBunny = new Bunny();
+    myBunny->init();
+
+    myCube = new Cube();
+    myCube->init();
+
+    myBunny->addChild(myCube);
+
+    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
+
+    Cam * mainCam = new Cam(glm::vec3(0, 0, -g_Camtrans), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    CamManager::addCam(mainCam);
+    CamManager::setCam(0);
+    CamManager::getCam(0)->projectionMatrix = Projection;
 
     assert(glGetError() == GL_NO_ERROR);
     do{
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        myBunny.draw();
-        myCube.draw();
+        myBunny->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

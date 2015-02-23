@@ -35,6 +35,8 @@ public:
     void setParent(Object3D * _parent);
     void bindUniformMatrix4f(const GLint handle, glm::mat4 matrix);
     void bindModelMatrix(std::string handle);
+    void bindViewMatrix(std::string handle);
+    void bindProjectionMatrix(std::string handle);
     Mesh * getMesh();
     GLuint getElementBuffer();
     GLuint getArrayBuffer(std::string bufferName);
