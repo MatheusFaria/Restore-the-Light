@@ -25,15 +25,24 @@ public:
     void loadElementBuffer();
     void loadVertexBuffer(std::string bufferName);
     void loadNormalBuffer(std::string bufferName);
+    void enableAttrArray3f(std::string aHandle, std::string bufHandle);
+    void disableAttrArray(std::string aHandle);
+    void loadIdentity();
+    void unbindAll();
+    void bindElements();
+    void drawElements();
+    void addChild(Object3D * child);
     void setParent(Object3D * _parent);
-    void setViewMatrix(glm::mat4 matrix);
+    void bindUniformMatrix4f(const GLint handle, glm::mat4 matrix);
+    void bindModelMatrix(std::string handle);
     Mesh * getMesh();
     GLuint getElementBuffer();
     GLuint getArrayBuffer(std::string bufferName);
     glm::mat4 getModelMatrix();
-    glm::mat4 getViewMatrix();
 
-    //virtual void draw();
+    void draw();
+
+    virtual void drawObject() = 0;
 
 protected:
     Mesh * mesh;
@@ -47,7 +56,6 @@ private:
     GLuint elementBuffer;
 
     glm::mat4 modelTransform = glm::mat4(1.0f);
-    glm::mat4 viewTransform = glm::mat4(1.0f);
 };
 
 #endif

@@ -8,9 +8,12 @@
 
 #include <iostream>
 
-Object3D::Object3D() {}
+#include "glm/gtc/type_ptr.hpp"
 
-Object3D::Object3D(Mesh * _mesh, Shader * _shader): mesh(_mesh), shader(_shader) {
+Object3D::Object3D() : Object3D(NULL, NULL){
+}
+
+Object3D::Object3D(Mesh * _mesh, Shader * _shader) : mesh(_mesh), shader(_shader) {
     parent = NULL;
 }
 
@@ -75,13 +78,65 @@ glm::mat4 Object3D::getModelMatrix(){
     return modelTransform;
 }
 
-glm::mat4 Object3D::getViewMatrix(){
-    return viewTransform;
+void Object3D::enableAttrArray3f(std::string aHandle, std::string bufHandle){
+    GLSL::enableVertexAttribArray(shader->getHandle(aHandle));
+    glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer(bufHandle));
+    glVertexAttribPointer(shader->getHandle(aHandle), 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-//void Object3D::draw(){}
+void Object3D::disableAttrArray(std::string aHandle){
+    GLSL::disableVertexAttribArray(shader->getHandle(aHandle));
+}
+
+void Object3D::loadIdentity(){
+    modelTransform = glm::mat4(1.0f);
+}
+
+void Object3D::unbindAll(){
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+}
+
+void Object3D::bindElements(){
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getElementBuffer());
+}
+
+void Object3D::drawElements(){
+    glDrawElements(GL_TRIANGLES, (int)mesh->getIndices().size(), GL_UNSIGNED_INT, 0);
+}
 
 
-void Object3D::setViewMatrix(glm::mat4 matrix){
-    viewTransform = matrix;
+void Object3D::addChild(Object3D * child){
+    children.push_back(child);
+}
+
+void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
+    glUniformMatrix4fv(handle, 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+void Object3D::bindModelMatrix(std::string handle){
+    if (parent != NULL)
+        bindUniformMatrix4f(shader->getHandle(handle), modelTransform*parent->getModelMatrix());
+    else
+        bindUniformMatrix4f(shader->getHandle(handle), modelTransform);
+}
+
+void Object3D::draw(){
+    glUseProgram(shader->getId());
+    
+    enableAttrArray3f("aPosition", "posBufObj");
+    enableAttrArray3f("aNormal", "norBufObj");
+    bindElements();
+
+    drawObject();
+
+    disableAttrArray("aPosition");
+    disableAttrArray("aNormal");
+
+    unbindAll();
+
+    for (unsigned int i = 0; i < children.size(); i++){
+        children[i]->draw();
+    }
 }

@@ -14,6 +14,7 @@
 #include "shader.h"
 #include "object3d.h"
 #include "load_manager.h"
+#include "material.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
@@ -24,13 +25,6 @@
 
 #define ON 1
 #define OFF 0
-
-#define BUNNY 0
-#define CUBE 1
-#define SPHERE 2
-
-#define GREEN_EASTER -4
-#define RED_EASTER -5
 
 GLFWwindow* window;
 using namespace std;
@@ -67,61 +61,8 @@ void SetView() {
     safe_glUniformMatrix4fv(shader->getHandle("uViewMatrix"), glm::value_ptr(Trans));
 }
 
-/* model transforms */
-void SetModel() {
-    glm::mat4 Trans = glm::translate(glm::mat4(1.0f), g_trans);
-    glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), g_angle, glm::vec3(0.0f, 1, 0));
-    glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), g_x_angle, glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 com = Trans*RotateY*RotateX;
-    safe_glUniformMatrix4fv(shader->getHandle("uModelMatrix"), glm::value_ptr(com));
-}
 
-/* helper function to send materials to the shader - you must create your own */
-void SetMaterial(int i) {
-    glUseProgram(shader->getId());
-    switch (i) {
-    case 0: //shiny blue plastic
-        glUniform3f(shader->getHandle("UaColor"), 0.02, 0.02, 0.1);
-        glUniform3f(shader->getHandle("UdColor"), 0.0, 0.08, 0.5);
-        glUniform3f(shader->getHandle("UsColor"), 0.14, 0.14, 0.4);
-        glUniform1f(shader->getHandle("Ushine"), 120.0);
-        break;
-    case 1: // flat grey
-        glUniform3f(shader->getHandle("UaColor"), 0.13, 0.13, 0.14);
-        glUniform3f(shader->getHandle("UdColor"), 0.3, 0.3, 0.4);
-        glUniform3f(shader->getHandle("UsColor"), 0.3, 0.3, 0.4);
-        glUniform1f(shader->getHandle("Ushine"), 4.0);
-        break;
-    case 2: //gold
-        glUniform3f(shader->getHandle("UaColor"), 0.09, 0.07, 0.08);
-        glUniform3f(shader->getHandle("UdColor"), 0.91, 0.782, 0.82);
-        glUniform3f(shader->getHandle("UsColor"), 1.0, 0.913, 0.8);
-        glUniform1f(shader->getHandle("Ushine"), 200.0);
-        break;
-    case 3: // Chocolate
-        glUniform3f(shader->getHandle("UaColor"), 0.141, 0.1, 0.0);
-        glUniform3f(shader->getHandle("UdColor"), 0.267, 0.141, 0.0);
-        glUniform3f(shader->getHandle("UsColor"), 0.709, 0.478, 0.216);
-        glUniform1f(shader->getHandle("Ushine"), 100.0);
-        break;
-
-        // Easter Eggs
-    case RED_EASTER:
-        glUniform3f(shader->getHandle("UaColor"), 0.2, 0.004, 0.004);
-        glUniform3f(shader->getHandle("UdColor"), 0.671, 0, 0);
-        glUniform3f(shader->getHandle("UsColor"), 0.976, 0.122, 0.122);
-        glUniform1f(shader->getHandle("Ushine"), 100.0);
-        break;
-    case GREEN_EASTER:
-        glUniform3f(shader->getHandle("UaColor"), 0.004, 0.408, 0.184);
-        glUniform3f(shader->getHandle("UdColor"), 0, 0.376, 0.114);
-        glUniform3f(shader->getHandle("UsColor"), 0.09, 0.722, 0.278);
-        glUniform1f(shader->getHandle("Ushine"), 100.0);
-        break;
-    }
-}
-
-class Cube : Object3D{
+class Cube : public Object3D{
 public:
     Cube(){}
 
@@ -149,11 +90,15 @@ public:
         shader->loadHandle("uEye");
     }
 
-    void draw(){
+    void drawObject(){
+        SetProjectionMatrix();
         SetView();
 
-        glm::mat4 Trans = glm::translate(glm::mat4(1.0f), glm::vec3(-3, -3, -5));
-        safe_glUniformMatrix4fv(shader->getHandle("uModelMatrix"), glm::value_ptr(Trans));
+        loadIdentity();
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(-3, -3, -5)));
+        bindModelMatrix("uModelMatrix");
+
+        Material::SetMaterial(Material::BLUE_PLASTIC, shader);
 
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
         glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
@@ -161,28 +106,11 @@ public:
         glUniform1i(shader->getHandle("uNormalM"), g_normal_mode);
         glUniform3f(shader->getHandle("uEye"), 0, 0, 0);
 
-        // Enable and bind position array for drawing
-        GLSL::enableVertexAttribArray(shader->getHandle("aPosition"));
-        glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer("posBufObj"));
-        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-        // Enable and bind normal array for drawing
-        GLSL::enableVertexAttribArray(shader->getHandle("aNormal"));
-        glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer("norBufObj"));
-        glVertexAttribPointer(shader->getHandle("aNormal"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-        // Bind index array for drawing
-        int nIndices = (int)mesh->getIndices().size();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getElementBuffer());
-
-        glDrawElements(GL_TRIANGLES, nIndices, GL_UNSIGNED_INT, 0);
-
-        GLSL::disableVertexAttribArray(shader->getHandle("aPosition"));
-        GLSL::disableVertexAttribArray(shader->getHandle("aNormal"));
+        drawElements();
     }
 };
 
-class Bunny : Object3D{
+class Bunny : public Object3D{
 public:
     Bunny(){}
 
@@ -210,12 +138,17 @@ public:
         shader->loadHandle("uEye");
     }
 
-    void draw(){
+    void drawObject(){
         SetProjectionMatrix();
         SetView();
 
-        SetModel();
-        SetMaterial(g_mat_id);
+        loadIdentity();
+        addTransformation(glm::rotate(glm::mat4(1.0f), g_x_angle, glm::vec3(1.0f, 0.0f, 0.0f)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), g_angle, glm::vec3(0.0f, 1, 0)));
+        addTransformation(glm::translate(glm::mat4(1.0f), g_trans));
+        bindModelMatrix("uModelMatrix");
+
+        Material::SetMaterial(Material::CHOCOLATE, shader);
 
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
         glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
@@ -223,86 +156,13 @@ public:
         glUniform1i(shader->getHandle("uNormalM"), g_normal_mode);
         glUniform3f(shader->getHandle("uEye"), 0, 0, 0);
 
-        // Enable and bind position array for drawing
-        GLSL::enableVertexAttribArray(shader->getHandle("aPosition"));
-        glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer("posBufObj"));
-        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-        // Enable and bind normal array for drawing
-        GLSL::enableVertexAttribArray(shader->getHandle("aNormal"));
-        glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer("norBufObj"));
-        glVertexAttribPointer(shader->getHandle("aNormal"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-        // Bind index array for drawing
-        int nIndices = (int)mesh->getIndices().size();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getElementBuffer());
-
-        glDrawElements(GL_TRIANGLES, nIndices, GL_UNSIGNED_INT, 0);
-
-        GLSL::disableVertexAttribArray(shader->getHandle("aPosition"));
-        GLSL::disableVertexAttribArray(shader->getHandle("aNormal"));
+        drawElements();
     }
 };
 
 
 Bunny myBunny;
 Cube myCube;
-
-
-void initGL()
-{
-    // Set the background color
-    glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
-    // Enable Z-buffer test
-    glEnable(GL_DEPTH_TEST);
-    glPointSize(18);
-
-    GLSL::checkVersion();
-    assert(glGetError() == GL_NO_ERROR);
-
-}
-
-bool installShaders()
-{
-    /* get handles to attribute data */
-    shader->loadHandle("aPosition");
-    shader->loadHandle("aNormal");
-    shader->loadHandle("uProjMatrix");
-    shader->loadHandle("uViewMatrix");
-    shader->loadHandle("uModelMatrix");
-    shader->loadHandle("uLightPos");
-    shader->loadHandle("UaColor");
-    shader->loadHandle("UdColor");
-    shader->loadHandle("UsColor");
-    shader->loadHandle("UeColor");
-    shader->loadHandle("Ushine");
-    shader->loadHandle("uShadeModel");
-    shader->loadHandle("uNormalM");
-    shader->loadHandle("uEye");
-
-    assert(glGetError() == GL_NO_ERROR);
-    return true;
-}
-
-
-void drawGL()
-{
-    // Clear the screen
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Use our GLSL program
-    glUseProgram(shader->getId());
-
-    myBunny.draw();
-    myCube.draw();
-
-    // Disable and unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glUseProgram(0);
-    assert(glGetError() == GL_NO_ERROR);
-
-}
 
 
 void window_size_callback(GLFWwindow* window, int w, int h){
@@ -397,7 +257,14 @@ int main(int argc, char **argv)
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Set the background color
+    glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
+    glPointSize(18);
+
+    GLSL::checkVersion();
 
     shader = LoadManager::getShader("vert.glsl", "frag.glsl");
     
@@ -406,14 +273,15 @@ int main(int argc, char **argv)
 
     myBunny = Bunny();
     myBunny.init();
-    
-    initGL();
-    installShaders();
 
-    glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
-
+    assert(glGetError() == GL_NO_ERROR);
     do{
-        drawGL();
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        myBunny.draw();
+        myCube.draw();
+
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
