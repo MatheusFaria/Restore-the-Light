@@ -17,136 +17,24 @@
 #include "material.h"
 #include "virtual_camera.h"
 
+#include "scene.h"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
 #include "glm/gtc/type_ptr.hpp" //value_ptr
 
-#define GOURAD 1
-#define PHONG 0
-
-#define ON 1
-#define OFF 0
 
 GLFWwindow* window;
 using namespace std;
 
-int g_SM = GOURAD;
-int g_normal_mode = OFF;
 int g_width;
 int g_height;
 float g_Camtrans = -2.5;
-float g_angle = 0, g_x_angle = 0;
 glm::vec3 g_trans(0, 0, 0);
-glm::vec3 g_light(0.5, 0.5, 5);
-glm::vec3 mouse_pos(0.0f);
-
-Shader * shader;
-
-class Cube : public Object3D{
-public:
-    Cube(){}
-
-    void init(){
-        mesh = LoadManager::getMesh("cube.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uShadeModel");
-        shader->loadHandle("uNormalM");
-        shader->loadHandle("uEye");
-    }
-
-    void drawObject(){
-        loadIdentity();
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.5, -3)));
-        bindModelMatrix("uModelMatrix");
-
-        Material::SetMaterial(Material::BLUE_PLASTIC, shader);
-
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
-        glUniform1i(shader->getHandle("uShadeModel"), g_SM);
-        glUniform1i(shader->getHandle("uNormalM"), g_normal_mode);
-        glUniform3f(shader->getHandle("uEye"), 0, 0, 0);
-
-        drawElements();
-    }
-};
-
-class Bunny : public Object3D{
-public:
-    Bunny(){}
-
-    void init(){
-        mesh = LoadManager::getMesh("bunny.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uShadeModel");
-        shader->loadHandle("uNormalM");
-        shader->loadHandle("uEye");
-    }
-
-    void drawObject(){
-        loadIdentity();
-        addTransformation(glm::rotate(glm::mat4(1.0f), g_x_angle, glm::vec3(1.0f, 0.0f, 0.0f)));
-        addTransformation(glm::rotate(glm::mat4(1.0f), g_angle, glm::vec3(0.0f, 1, 0)));
-        addTransformation(glm::translate(glm::mat4(1.0f), g_trans));
-        bindModelMatrix("uModelMatrix");
-
-        Material::SetMaterial(Material::CHOCOLATE, shader);
-
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
-        glUniform1i(shader->getHandle("uShadeModel"), g_SM);
-        glUniform1i(shader->getHandle("uNormalM"), g_normal_mode);
-        glUniform3f(shader->getHandle("uEye"), 0, 0, 0);
-
-        drawElements();
-    }
-};
-
-
-Bunny * myBunny;
-Cube * myCube;
-
-
-void window_size_callback(GLFWwindow* window, int w, int h){
-    glViewport(0, 0, (GLsizei)w, (GLsizei)h);
-    g_width = w;
-    g_height = h;
-}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    /*
     //Rotate the object around Y axis
     if (key == GLFW_KEY_A && action == GLFW_PRESS)
         g_angle += 10;
@@ -159,18 +47,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_S && action == GLFW_PRESS)
         g_x_angle -= 10;
 
-    //Switches between Phong and Goroud
-    if (key == GLFW_KEY_Z && action == GLFW_PRESS){
-        g_SM = !g_SM;
-        g_normal_mode = OFF;
-    }
-
-    //Switches to normal coloring
-    if (key == GLFW_KEY_N && action == GLFW_PRESS){
-        g_SM = GOURAD;
-        g_normal_mode = !g_normal_mode;
-    }
-
+        
     //Move light in X axis
     if (key == GLFW_KEY_Q && action == GLFW_PRESS)
         g_light.x -= 0.25;
@@ -181,13 +58,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_I && action == GLFW_PRESS)
         g_light.z -= 0.25;
     if (key == GLFW_KEY_K && action == GLFW_PRESS)
-        g_light.z += 0.25;
-}
-
-static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    mouse_pos.x = xpos;
-    mouse_pos.y = ypos;
+        g_light.z += 0.25;*/
 }
 
 int main(int argc, char **argv)
@@ -215,7 +86,6 @@ int main(int argc, char **argv)
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
-    glfwSetWindowSizeCallback(window, window_size_callback);
 
     // Initialize glad
     if (!gladLoadGL()) {
@@ -227,7 +97,6 @@ int main(int argc, char **argv)
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
 
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -239,29 +108,41 @@ int main(int argc, char **argv)
 
     GLSL::checkVersion();
 
-    shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+    GameMap * gameMap = new GameMap();
+    gameMap->init();
 
-    myBunny = new Bunny();
-    myBunny->init();
+    Hero * hero = new Hero(gameMap);
+    hero->init();
 
-    myCube = new Cube();
-    myCube->init();
+    gameMap->addChild(hero);
 
-    myBunny->addChild(myCube);
+    Enemy * e = new Enemy(gameMap);
+    e->init();
 
     glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
 
-    Cam * mainCam = new Cam(glm::vec3(0, 0, -g_Camtrans), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    CamManager::addCam(mainCam);
-    CamManager::setCam(0);
-    CamManager::getCam(0)->projectionMatrix = Projection;
+    Cam * isoCam = new Cam(glm::vec3(10, 10, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    int isoCamId = CamManager::addCam(isoCam);
+
+    Cam * mainCam = new Cam(glm::vec3(0, 0, 5), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+    int mainCamId = CamManager::addCam(mainCam);
+
+    Cam * topCam = new Cam(glm::vec3(0.1, 30, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    int topCamId = CamManager::addCam(topCam);
+
+    CamManager::setCam(mainCamId);
 
     assert(glGetError() == GL_NO_ERROR);
     do{
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        myBunny->draw();
+        CamManager::currentCam()->projectionMatrix = Projection;
+
+        gameMap->draw();
+        //hero->draw();
+
+        //e->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

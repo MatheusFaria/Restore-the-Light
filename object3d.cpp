@@ -133,21 +133,25 @@ void Object3D::bindProjectionMatrix(std::string handle){
 }
 
 void Object3D::draw(){
-    glUseProgram(shader->getId());
-    
-    bindViewMatrix("uViewMatrix");
-    bindProjectionMatrix("uProjMatrix");
+    if (shader){
+        glUseProgram(shader->getId());
 
-    enableAttrArray3f("aPosition", "posBufObj");
-    enableAttrArray3f("aNormal", "norBufObj");
-    bindElements();
+        bindViewMatrix("uViewMatrix");
+        bindProjectionMatrix("uProjMatrix");
+
+        enableAttrArray3f("aPosition", "posBufObj");
+        enableAttrArray3f("aNormal", "norBufObj");
+        bindElements();
+    }
 
     drawObject();
 
-    disableAttrArray("aPosition");
-    disableAttrArray("aNormal");
+    if (shader){
+        disableAttrArray("aPosition");
+        disableAttrArray("aNormal");
 
-    unbindAll();
+        unbindAll();
+    }
 
     for (unsigned int i = 0; i < children.size(); i++){
         children[i]->draw();
