@@ -22,10 +22,10 @@ varying vec3 H;
 void main()
 {
 	vec3 vertexPos = vec3(uViewMatrix * uModelMatrix * aPosition);
-	normalVec = vec3(uViewMatrix*uModelMatrix*vec4(aNormal, 0));
+	normalVec = normalize(vec3(uViewMatrix*uModelMatrix*vec4(aNormal, 0)));
 	vec3 eye = uEye;
 
-	light = uLightPos - vertexPos;
+	light = normalize(uLightPos - vertexPos);
 	vec3 L = normalize(light);
 	vec3 V = normalize(eye - vertexPos);
 	H = normalize(L + V);

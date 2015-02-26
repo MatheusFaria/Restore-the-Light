@@ -9,6 +9,7 @@
 
 #include <map>
 #include <vector>
+#include <stack>
 
 #include "mesh.h"
 #include "shader.h"
@@ -50,6 +51,11 @@ protected:
     Mesh * mesh;
     Shader * shader;
 
+    void pushMatrix();
+    void popMatrix();
+    void reloadTopMatrix();
+    void resetMatrix();
+
 private:
     Object3D * parent;
     std::vector<Object3D *> children;
@@ -57,7 +63,8 @@ private:
     std::map<std::string, GLuint> arrayBuffers;
     GLuint elementBuffer;
 
-    glm::mat4 modelTransform = glm::mat4(1.0f);
+    std::stack <glm::mat4> matrixStack;
+    glm::mat4 modelTransform;
 };
 
 #endif
