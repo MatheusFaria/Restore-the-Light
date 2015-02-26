@@ -25,7 +25,7 @@ void main()
 	normalVec = normalize(vec3(uViewMatrix*uModelMatrix*vec4(aNormal, 0)));
 	vec3 eye = uEye;
 
-	light = normalize(uLightPos - vertexPos);
+	light = normalize(uLightPos);//normalize(uLightPos - vertexPos);
 	vec3 L = normalize(light);
 	vec3 V = normalize(eye - vertexPos);
 	H = normalize(L + V);

@@ -27,6 +27,7 @@
 # define M_PI 3.141592
 float phi = 0, theta = -90;
 bool g_lock_mouse = true;
+float cam_velocity = 0.5f;
 
 GLFWwindow* window;
 using namespace std;
@@ -159,6 +160,9 @@ int main(int argc, char **argv)
     CamManager::setCam(0);
     CamManager::getCam(0)->projectionMatrix = Projection;
 
+    Light * light = new Light();
+    light->init();
+
     assert(glGetError() == GL_NO_ERROR);
 
     glm::vec3 viewVector = glm::vec3(0.0f);
@@ -175,28 +179,29 @@ int main(int argc, char **argv)
         //Capturing the keybord input
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         {
-            mainCam->eye -= viewVector*0.1f;
-            mainCam->lookAt -= viewVector*0.1f;
+            mainCam->eye -= viewVector*cam_velocity;
+            mainCam->lookAt -= viewVector*cam_velocity;
         }
         else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         {
-            mainCam->eye += viewVector*0.1f;
-            mainCam->lookAt += viewVector*0.1f;
+            mainCam->eye += viewVector*cam_velocity;
+            mainCam->lookAt += viewVector*cam_velocity;
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
             glm::vec3 strafe = glm::cross(viewVector, mainCam->upVector);
-            mainCam->eye += strafe*0.1f;
-            mainCam->lookAt += strafe*0.1f;
+            mainCam->eye += strafe*cam_velocity;
+            mainCam->lookAt += strafe*cam_velocity;
         }
         else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         {
             glm::vec3 strafe = glm::cross(viewVector, mainCam->upVector);
-            mainCam->eye -= strafe*0.1f;
-            mainCam->lookAt -= strafe*0.1f;
+            mainCam->eye -= strafe*cam_velocity;
+            mainCam->lookAt -= strafe*cam_velocity;
         }
 
         gameMap->draw();
+        light->draw();
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();

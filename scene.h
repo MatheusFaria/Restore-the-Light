@@ -19,7 +19,7 @@
 
 using namespace std;
 
-glm::vec3 g_light(0.5, 0.5, 5);
+glm::vec3 g_light(1, 10, 50);
 
 class Cube : public Object3D{
 public:
@@ -89,7 +89,7 @@ public:
                 break;
             }
         }
-
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
         //addTransformation(glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0, 0, 1)));
     }
 
@@ -112,6 +112,50 @@ private:
     static const char DEFAULT_CUBE = 'c';
 };
 
+class Light : public Object3D{
+public:
+    Light(){
+    }
+
+    void init(){
+        mesh = LoadManager::getMesh("sphere.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+        shader->loadHandle("aPosition");
+        shader->loadHandle("aNormal");
+        shader->loadHandle("uProjMatrix");
+        shader->loadHandle("uViewMatrix");
+        shader->loadHandle("uModelMatrix");
+        shader->loadHandle("uLightPos");
+        shader->loadHandle("UaColor");
+        shader->loadHandle("UdColor");
+        shader->loadHandle("UsColor");
+        shader->loadHandle("UeColor");
+        shader->loadHandle("Ushine");
+        shader->loadHandle("uEye");
+    }
+
+    void drawObject(){
+        glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
+        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
+        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        Material::SetMaterial(Material::GOLD, shader);
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), g_light));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
+
+};
 
 class Hero : public Object3D{
 public:
