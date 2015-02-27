@@ -27,7 +27,7 @@
 # define M_PI 3.141592
 float phi = 0, theta = -90;
 bool g_lock_mouse = true;
-float cam_velocity = 0.5f;
+float cam_velocity = 0.3f;
 
 GLFWwindow* window;
 using namespace std;
@@ -47,10 +47,10 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     phi += (g_height / 2 - ypos) * 360 / g_height;
     theta -= (g_width / 2 - xpos) * 360 / g_width;
 
-    if (phi > 90)
-        phi = 90;
-    if (phi < -90)
-        phi = -90;
+    if (phi > 80)
+        phi = 80;
+    if (phi < -80)
+        phi = -80;
 
     if (g_lock_mouse){
         glfwSetCursorPos(window, g_width / 2, g_height / 2);
@@ -106,19 +106,19 @@ int main(int argc, char **argv)
 
     // Set the background color
     //glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glPointSize(18);
 
     GLSL::checkVersion();
 
-    int rows = 12, cols = 12;
+    int rows = 20, cols = 20;
 
     GameMap * gameMap = new GameMap(string(rows*cols, 'c'), rows , cols);
     gameMap->init();
 
     Hero * hero = new Hero(gameMap, 0);
     hero->init();
-    //gameMap->addChild(hero);
+    gameMap->addChild(hero);
 
     srand(time(NULL));
     int enemies[20] = {0};
@@ -141,13 +141,14 @@ int main(int argc, char **argv)
         } while (!in);
         enemies[i] = cube_pos;
 
+        int randomRotation = rand() % 360;
         if (i < 10){
-            Enemy * e = new Enemy(gameMap, cube_pos);
+            Enemy * e = new Enemy(gameMap, cube_pos, randomRotation);
             e->init();
             gameMap->addChild(e);
         }
         else {
-            Item* item = new Item(gameMap, cube_pos);
+            Item* item = new Item(gameMap, cube_pos, randomRotation);
             item->init();
             gameMap->addChild(item);
         }
@@ -202,6 +203,7 @@ int main(int argc, char **argv)
 
         gameMap->draw();
         light->draw();
+
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();

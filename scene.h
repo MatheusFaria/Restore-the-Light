@@ -21,9 +21,18 @@ using namespace std;
 
 glm::vec3 g_light(1, 10, 50);
 
-class Cube : public Object3D{
+class GameMap : public Object3D{
 public:
-    Cube(){}
+    string mapLayout;
+    int mapRowsSize;
+    int mapColsSize;
+
+    GameMap(string _mapLayout, int rows, int cols):
+    mapLayout(_mapLayout), mapRowsSize(rows), mapColsSize(cols){
+        if (mapLayout.size() != mapRowsSize*mapColsSize){
+            Log::error("GameMap::generateMap", "Incorrect size for a map", "", mapLayout);
+        }
+    }
 
     void init(){
         mesh = LoadManager::getMesh("cube.obj");
@@ -45,6 +54,11 @@ public:
         shader->loadHandle("UeColor");
         shader->loadHandle("Ushine");
         shader->loadHandle("uEye");
+
+        //loadIdentity();
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
+        //addTransformation(glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0, 0, 1)));
+        pushMatrix();
     }
 
     void drawObject(){
@@ -54,46 +68,23 @@ public:
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
 
-        Material::SetMaterial(Material::BLUE_PLASTIC, shader);
+        Material::SetMaterial(Material::SILVER, shader);
         
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-};
-
-class GameMap : public Object3D{
-public:
-    string mapLayout;
-    int mapRowsSize;
-    int mapColsSize;
-
-    GameMap(string _mapLayout, int rows, int cols):
-    mapLayout(_mapLayout), mapRowsSize(rows), mapColsSize(cols){
-        if (mapLayout.size() != mapRowsSize*mapColsSize){
-            Log::error("GameMap::generateMap", "Incorrect size for a map", "", mapLayout);
-        }
-    }
-
-    void init(){
+        
         for (int index = 0; index < mapRowsSize*mapColsSize; index++){
-            Cube * c = new Cube();
-            c->init();
-            addChild(c);
             switch (mapLayout[index]){
             case DEFAULT_CUBE:
-                c->addTransformation(glm::translate(glm::mat4(1.0f), getCubePos(index)));
+                addTransformation(glm::translate(glm::mat4(1.0f), getCubePos(index)));
                 break;
             case EMPTY_SPACE:
             default:
                 break;
             }
-        }
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
-        //addTransformation(glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0, 0, 1)));
-    }
 
-    void drawObject(){
+            bindModelMatrix("uModelMatrix");
+            drawElements();
+            reloadTopMatrix();
+        }
     }
 
     glm::vec3 getCubePos(int cubePos){
@@ -211,7 +202,8 @@ public:
 
 class Item : public Object3D{
 public:
-    Item(GameMap * _map, int cubeIndex) : gameMap(_map), currentCube(cubeIndex){
+    Item(GameMap * _map, int cubeIndex, int rot) : gameMap(_map), currentCube(cubeIndex){
+        rotAxe = (float) rot;
     }
 
     void init(){
@@ -243,30 +235,31 @@ public:
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
 
-        Material::SetMaterial(Material::GOLD, shader);
+        Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
 
         glm::vec3 pos = gameMap->getCubePos(currentCube);
         pos.y += 1.6;
 
         addTransformation(glm::translate(glm::mat4(1.0f), pos));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rotAxe, glm::vec3(0, 1, 0)));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.6)));
         bindModelMatrix("uModelMatrix");
 
         drawElements();
     }
 
-
+    float rotAxe;
     int currentCube;
     GameMap * gameMap;
 };
 
-
 class Enemy : public Object3D{
 public:
-    Enemy(GameMap * _map, int cubeIndex) : gameMap(_map), currentCube(cubeIndex){
+    Enemy(GameMap * _map, int cubeIndex, int rot) : gameMap(_map), currentCube(cubeIndex){
         arms_angle = 0;
         direction = -1;
+        rotAxe = (float)rot;
     }
 
     void init(){
@@ -298,7 +291,7 @@ public:
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
 
-        Material::SetMaterial(Material::FLAT_GREY, shader);
+        Material::SetMaterial(Material::OBSIDIAN, shader);
         glm::vec3 pos = gameMap->getCubePos(currentCube);
 
         loadIdentity();
@@ -317,6 +310,7 @@ public:
 
         pos.y += 2;
         addTransformation(glm::translate(glm::mat4(1.0f), pos));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rotAxe, glm::vec3(0, 1, 0)));
         pushMatrix();
 
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.2)));
@@ -403,6 +397,7 @@ public:
 private:
     float arms_angle;
     int direction;
+    float rotAxe;
 
     void armsAnimationUpdate(){
         arms_angle += direction*5.0f;
