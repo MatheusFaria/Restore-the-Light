@@ -169,6 +169,20 @@ int main(int argc, char **argv)
     hero->init();
     gameMap->addChild(hero);
 
+    glm::mat4x3 mat = glm::mat4x3(1.0f);
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 3; j++){
+            mat[i][j] = i*4 + j;
+        }
+    }
+    
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 3; j++){
+            cout << mat[i][j] << " ";
+        }
+        cout << endl;
+    }
+
     /*srand(time(NULL));
     int enemies[20] = {0};
     for (int i = 0; i < 20; i++){
@@ -203,9 +217,6 @@ int main(int argc, char **argv)
         }
     }*/
 
-    Light * light = new Light();
-    light->init();
-
     assert(glGetError() == GL_NO_ERROR);
     do{
         // Clear the screen
@@ -214,7 +225,6 @@ int main(int argc, char **argv)
         hero->checkInput(window);
 
         gameMap->draw();
-        light->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

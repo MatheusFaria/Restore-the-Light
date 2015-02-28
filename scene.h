@@ -125,39 +125,6 @@ private:
     static const char DEFAULT_CUBE = 'c';
 };
 
-class Light : public Object3D{
-public:
-    Light(){
-    }
-
-    void init(){
-        mesh = LoadManager::getMesh("sphere.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-    }
-
-    void drawObject(){
-        glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-
-        Material::SetMaterial(Material::GOLD, shader);
-        loadIdentity();
-
-        addTransformation(glm::translate(glm::mat4(1.0f), g_light));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-
-};
-
 class Item : public Object3D{
 public:
     Item(GameMap * _map, int cubeIndex, int rot) : gameMap(_map), currentCube(cubeIndex){
