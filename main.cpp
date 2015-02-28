@@ -1,7 +1,7 @@
 /*
 * Author: Matheus de Sousa Faria
 * CPE 471 - Introduction to Computer Graphics
-* Program 3
+* Program 4
 * Code modifed from ZJ Wood
 */
 
@@ -19,21 +19,24 @@
 #include "virtual_camera.h"
 
 #include "scene.h"
+#include "hero.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
 #include "glm/gtc/type_ptr.hpp" //value_ptr
 
-# define M_PI 3.141592
-float phi = 0, theta = -90;
-bool g_lock_mouse = true;
-float cam_velocity = 0.3f;
+
+
 
 GLFWwindow* window;
 using namespace std;
 
 int g_width;
 int g_height;
+bool g_lock_mouse = true;
+bool g_first_mouse_movement = true;
+
+Hero * hero;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -44,21 +47,63 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    phi += (g_height / 2 - ypos) * 360 / g_height;
-    theta -= (g_width / 2 - xpos) * 360 / g_width;
+    if (hero){
+        if (hero->isFPS()){
+            if (g_first_mouse_movement){
+                g_first_mouse_movement = false;
+                glfwSetCursorPos(window, g_width / 2, g_height / 2);
+                return;
+            }
 
-    if (phi > 80)
-        phi = 80;
-    if (phi < -80)
-        phi = -80;
+            float phi = CamManager::currentCam()->getPhi(), 
+                theta = CamManager::currentCam()->getTheta();
+            phi += (g_height / 2 - ypos) * 360 / g_height;
+            theta -= (g_width / 2 - xpos) * 360 / g_width;
 
-    if (g_lock_mouse){
-        glfwSetCursorPos(window, g_width / 2, g_height / 2);
+            if (phi > 80)
+                phi = 80;
+            if (phi < -80)
+                phi = -80;
+
+            CamManager::currentCam()->setAngles(theta, phi);
+
+            if (g_lock_mouse){
+                glfwSetCursorPos(window, g_width / 2, g_height / 2);
+            }
+        }
     }
 }
 
-float degToRad(float angle){
-    return angle*M_PI / 180;
+
+void setupCams(){
+    int numberCameras = 3;
+    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
+
+    for (int i = 0; i < numberCameras; i++){
+        Cam * mainCam = new Cam(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+        CamManager::addCam(mainCam);
+        CamManager::getCam(i)->projectionMatrix = Projection;
+    }
+}
+
+void installShaders(){
+    Shader * shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("aNormal");
+    shader->loadHandle("uProjMatrix");
+    shader->loadHandle("uViewMatrix");
+    shader->loadHandle("uModelMatrix");
+    shader->loadHandle("uLightPos");
+    shader->loadHandle("UaColor");
+    shader->loadHandle("UdColor");
+    shader->loadHandle("UsColor");
+    shader->loadHandle("UeColor");
+    shader->loadHandle("Ushine");
+    shader->loadHandle("uEye");
+}
+
+void installMeshes(){
+    LoadManager::getMesh("sphere.obj");
 }
 
 int main(int argc, char **argv)
@@ -105,22 +150,26 @@ int main(int argc, char **argv)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Set the background color
-    //glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glPointSize(18);
 
     GLSL::checkVersion();
 
-    int rows = 20, cols = 20;
+    setupCams();
+    installShaders();
+    installMeshes();
 
-    GameMap * gameMap = new GameMap(string(rows*cols, 'c'), rows , cols);
+
+    int rows = 5, cols = 5;
+
+    GameMap * gameMap = new GameMap("cccccc...cc...cc...cccccc", rows, cols);
     gameMap->init();
 
-    Hero * hero = new Hero(gameMap, 0);
+    hero = new Hero(gameMap, 0);
     hero->init();
     gameMap->addChild(hero);
 
-    srand(time(NULL));
+    /*srand(time(NULL));
     int enemies[20] = {0};
     for (int i = 0; i < 20; i++){
         int cube_pos;
@@ -152,54 +201,17 @@ int main(int argc, char **argv)
             item->init();
             gameMap->addChild(item);
         }
-    }
-
-    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
-
-    Cam * mainCam = new Cam(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
-    CamManager::addCam(mainCam);
-    CamManager::setCam(0);
-    CamManager::getCam(0)->projectionMatrix = Projection;
+    }*/
 
     Light * light = new Light();
     light->init();
 
     assert(glGetError() == GL_NO_ERROR);
-
-    glm::vec3 viewVector = glm::vec3(0.0f);
     do{
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        mainCam->lookAt.x = cos(degToRad(phi))*cos(degToRad(theta)) + mainCam->eye.x;
-        mainCam->lookAt.y = sin(degToRad(phi)) + mainCam->eye.y;
-        mainCam->lookAt.z = cos(degToRad(phi))*cos(degToRad(90 - theta)) + mainCam->eye.z;
-        
-        viewVector = mainCam->eye - mainCam->lookAt;
 
-        //Capturing the keybord input
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        {
-            mainCam->eye -= viewVector*cam_velocity;
-            mainCam->lookAt -= viewVector*cam_velocity;
-        }
-        else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        {
-            mainCam->eye += viewVector*cam_velocity;
-            mainCam->lookAt += viewVector*cam_velocity;
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        {
-            glm::vec3 strafe = glm::cross(viewVector, mainCam->upVector);
-            mainCam->eye += strafe*cam_velocity;
-            mainCam->lookAt += strafe*cam_velocity;
-        }
-        else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        {
-            glm::vec3 strafe = glm::cross(viewVector, mainCam->upVector);
-            mainCam->eye -= strafe*cam_velocity;
-            mainCam->lookAt -= strafe*cam_velocity;
-        }
+        hero->checkInput(window);
 
         gameMap->draw();
         light->draw();

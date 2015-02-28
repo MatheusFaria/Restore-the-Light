@@ -3,7 +3,7 @@
 /*
 * Author: Matheus de Sousa Faria
 * CPE 471 - Introduction to Computer Graphics
-* Program 3
+* Program 4
 */
 
 attribute vec4 aPosition;

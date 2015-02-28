@@ -4,15 +4,35 @@
 #include <vector>
 #include "glm/glm.hpp"
 
+#define FPS_CAM 0
+#define ISO_CAM 1
+#define TOP_CAM 2
+
 class Cam{
 public:
     Cam();
     Cam(glm::vec3 _eye, glm::vec3 _lookAt, glm::vec3 _upVector);
 
     glm::mat4 getViewMatrix();
+    glm::vec3 getViewVector();
+    glm::vec3 getStrafeVector();
+
+    void strafe(int direction, float velocity);
+    void zoom(int direction, float velocity);
+    
+    void setAngles(float _theta, float _phi);
+    float getTheta();
+    float getPhi();
+    
+    void turnOffY();
 
     glm::mat4 projectionMatrix;
     glm::vec3 eye, lookAt, upVector;
+
+private:
+    float theta, phi;
+    void updateLookAt();
+    bool updateY;
 };
 
 class CamManager{

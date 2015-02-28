@@ -50,6 +50,7 @@ public:
 protected:
     Mesh * mesh;
     Shader * shader;
+    Object3D * parent;
 
     void pushMatrix();
     void popMatrix();
@@ -57,7 +58,6 @@ protected:
     void resetMatrix();
 
 private:
-    Object3D * parent;
     std::vector<Object3D *> children;
 
     std::map<std::string, GLuint> arrayBuffers;

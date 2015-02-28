@@ -42,21 +42,9 @@ public:
         loadElementBuffer();
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uEye");
 
         //loadIdentity();
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
+        //addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
         //addTransformation(glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0, 0, 1)));
         pushMatrix();
     }
@@ -97,6 +85,40 @@ public:
         return glm::vec3(x, y, z);
     }
 
+    bool thereIsCube(int pos){
+        if (pos < mapLayout.size() && pos >= 0){
+            return mapLayout[pos] == DEFAULT_CUBE;
+        }
+        return false;
+    }
+
+    bool thereIsCube(glm::vec3 pos){
+        pos = -1.0f * pos;
+        float x1 = pos.x / CUBE_SIDE, y1 = pos.y, 
+            z1 = pos.z/CUBE_SIDE;
+
+        int x = (int) x1, z = (int) z1;
+
+        if (pos.x <= x*CUBE_SIDE - 1){
+            x--;
+        }
+        else if (pos.x > x*CUBE_SIDE + 1){
+            x++;
+        }
+
+        if (pos.z <= z*CUBE_SIDE - 1){
+            z--;
+        }
+        else if (pos.z > z*CUBE_SIDE + 1){
+            z++;
+        }
+
+        if (x >= 0 && z >= 0 && x < mapRowsSize && z < mapColsSize){
+            return thereIsCube(x*mapRowsSize + z);
+        }
+        return false;
+    }
+
 private:
     static const int CUBE_SIDE = 2;
     static const char EMPTY_SPACE = '.';
@@ -116,18 +138,6 @@ public:
         loadElementBuffer();
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uEye");
     }
 
     void drawObject(){
@@ -148,58 +158,6 @@ public:
 
 };
 
-class Hero : public Object3D{
-public:
-    Hero(GameMap * _map, int cubeIndex) : gameMap(_map), currentCube(cubeIndex){
-    }
-
-    void init(){
-        mesh = LoadManager::getMesh("sphere.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uEye");
-    }
-
-    void drawObject(){
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-
-        Material::SetMaterial(Material::GOLD, shader);
-        loadIdentity();
-
-        glm::vec3 pos = gameMap->getCubePos(currentCube);
-        pos.y += 3;
-
-        addTransformation(glm::translate(glm::mat4(1.0f), pos));
-        addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-
-
-    int currentCube;
-    GameMap * gameMap;
-};
-
 class Item : public Object3D{
 public:
     Item(GameMap * _map, int cubeIndex, int rot) : gameMap(_map), currentCube(cubeIndex){
@@ -214,18 +172,6 @@ public:
         loadElementBuffer();
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uEye");
     }
 
     void drawObject(){
@@ -270,18 +216,6 @@ public:
         loadElementBuffer();
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("aNormal");
-        shader->loadHandle("uProjMatrix");
-        shader->loadHandle("uViewMatrix");
-        shader->loadHandle("uModelMatrix");
-        shader->loadHandle("uLightPos");
-        shader->loadHandle("UaColor");
-        shader->loadHandle("UdColor");
-        shader->loadHandle("UsColor");
-        shader->loadHandle("UeColor");
-        shader->loadHandle("Ushine");
-        shader->loadHandle("uEye");
     }
 
     void drawObject(){
