@@ -41,8 +41,17 @@ Hero * hero;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     //Move light in X axis
+    //if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    //    g_lock_mouse = !g_lock_mouse;
+
+    if (key == GLFW_KEY_I && action == GLFW_PRESS)
+        g_light.y += 0.1f;
+    else if (key == GLFW_KEY_K && action == GLFW_PRESS)
+        g_light.y -= 0.1f;
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
-        g_lock_mouse = !g_lock_mouse;
+        g_light.x += 0.1f;
+    else if (key == GLFW_KEY_J && action == GLFW_PRESS)
+        g_light.x -= 0.1f;
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
@@ -100,6 +109,7 @@ void installShaders(){
     shader->loadHandle("UeColor");
     shader->loadHandle("Ushine");
     shader->loadHandle("uEye");
+    shader->loadHandle("uMV_IT"); 
 }
 
 void installMeshes(){
@@ -150,7 +160,7 @@ int main(int argc, char **argv)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Set the background color
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glPointSize(18);
 
     GLSL::checkVersion();
@@ -160,32 +170,24 @@ int main(int argc, char **argv)
     installMeshes();
 
 
-    int rows = 5, cols = 5;
+    int rows = 25, cols = 25;
 
-    GameMap * gameMap = new GameMap("cccccc...cc...cc...cccccc", rows, cols);
+    //GameMap * gameMap = new GameMap("cccccc...cc...cc...cccccc", rows, cols);
+    GameMap * gameMap = new GameMap(string(rows*cols, 'c'), rows, cols);
     gameMap->init();
+
+    g_light = gameMap->getCubePos(rows/2*rows + cols/2);
 
     hero = new Hero(gameMap, 0);
     hero->init();
     gameMap->addChild(hero);
 
-    glm::mat4x3 mat = glm::mat4x3(1.0f);
-    for (int i = 0; i < 4; i++){
-        for (int j = 0; j < 3; j++){
-            mat[i][j] = i*4 + j;
-        }
-    }
-    
-    for (int i = 0; i < 4; i++){
-        for (int j = 0; j < 3; j++){
-            cout << mat[i][j] << " ";
-        }
-        cout << endl;
-    }
+    LightObject * l = new LightObject();
+    l->init();
 
-    /*srand(time(NULL));
+    srand(time(NULL));
     int enemies[20] = {0};
-    for (int i = 0; i < 20; i++){
+    for (int i = 0; i < 1; i++){
         int cube_pos;
         bool in = true;
         do{
@@ -206,7 +208,7 @@ int main(int argc, char **argv)
 
         int randomRotation = rand() % 360;
         if (i < 10){
-            Enemy * e = new Enemy(gameMap, cube_pos, randomRotation);
+            Enemy * e = new Enemy(gameMap, 6*rows + 4, 30);
             e->init();
             gameMap->addChild(e);
         }
@@ -215,7 +217,7 @@ int main(int argc, char **argv)
             item->init();
             gameMap->addChild(item);
         }
-    }*/
+    }
 
     assert(glGetError() == GL_NO_ERROR);
     do{
@@ -225,6 +227,7 @@ int main(int argc, char **argv)
         hero->checkInput(window);
 
         gameMap->draw();
+        l->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

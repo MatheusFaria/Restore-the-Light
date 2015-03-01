@@ -15,6 +15,7 @@ uniform float Ushine;
 varying vec3 normalVec;
 varying vec3 light;
 varying vec3 H;
+varying float d;
 
 void main()
 {
@@ -30,6 +31,6 @@ void main()
 
 	vec3 Is = pow(max(dot(N, H), 0), n)*ks;
 	vec3 Id = max(dot(N, L), 0)*kd;
-	vec3 I = Id + Is + Ia + Ie;
+	vec3 I = (Id + Is)/(0 + 0*d + 0.01*d*d) + Ia + Ie;
 	gl_FragColor = vec4(I.xyz, 1.0);
 }

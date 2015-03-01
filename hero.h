@@ -36,7 +36,7 @@ public:
         pos.y += 2;
 
         setControlMode(FPS);
-        velocity = 0.01f;
+        velocity = 0.3f;
     }
 
     void drawObject(){
@@ -45,6 +45,10 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
+        //glUniform3f(shader->getHandle("uEye"),
+        //    CamManager::currentCam()->getViewVector().x,
+        //    CamManager::currentCam()->getViewVector().y,
+        //    CamManager::currentCam()->getViewVector().z);
 
         Material::SetMaterial(Material::GOLD, shader);
         loadIdentity();
@@ -148,7 +152,6 @@ private:
         }
 
         CamManager::currentCam()->lookAt = pos;
-        CamManager::currentCam()->setAngles(225, -15);
         CamManager::currentCam()->eye = glm::vec3(pos.x + 5, pos.y + 2, pos.z + 4);
     }
 
@@ -156,7 +159,7 @@ private:
         if (val == FPS){
             controlMode = FPS;
             CamManager::setCam(FPS_CAM);
-            CamManager::currentCam()->turnOffY();
+            //CamManager::currentCam()->turnOffY();
             CamManager::currentCam()->setAngles(-180, 0);
             CamManager::currentCam()->eye = pos;
             CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);

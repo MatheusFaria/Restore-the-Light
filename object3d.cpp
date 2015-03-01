@@ -120,10 +120,16 @@ void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
 }
 
 void Object3D::bindModelMatrix(std::string handle){
-    if (parent != NULL)
+    if (parent != NULL){
         bindUniformMatrix4f(shader->getHandle(handle), parent->getModelMatrix()*modelTransform);
-    else
+        bindUniformMatrix4f(shader->getHandle("uMV_IT"),
+            glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*parent->getModelMatrix()*modelTransform)));
+    }
+    else{
         bindUniformMatrix4f(shader->getHandle(handle), modelTransform);
+        bindUniformMatrix4f(shader->getHandle("uMV_IT"),
+            glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*modelTransform)));
+    }
 }
 
 void Object3D::bindViewMatrix(std::string handle){

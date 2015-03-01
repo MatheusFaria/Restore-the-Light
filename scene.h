@@ -19,7 +19,7 @@
 
 using namespace std;
 
-glm::vec3 g_light(1, 10, 50);
+glm::vec3 g_light(-6, 5, -6);
 
 class GameMap : public Object3D{
 public:
@@ -52,9 +52,14 @@ public:
     void drawObject(){
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
         glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
+        glUniform3f(shader->getHandle("uEye"), 
+            CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
+        //glUniform3f(shader->getHandle("uEye"),
+        //    CamManager::currentCam()->getViewVector().x,
+        //    CamManager::currentCam()->getViewVector().y,
+        //    CamManager::currentCam()->getViewVector().z);
 
         Material::SetMaterial(Material::SILVER, shader);
         
@@ -147,6 +152,10 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
+        //glUniform3f(shader->getHandle("uEye"),
+        //    CamManager::currentCam()->getViewVector().x,
+        //    CamManager::currentCam()->getViewVector().y,
+        //    CamManager::currentCam()->getViewVector().z);
 
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
@@ -165,6 +174,41 @@ public:
     float rotAxe;
     int currentCube;
     GameMap * gameMap;
+};
+
+class LightObject : public Object3D{
+public:
+    LightObject(){}
+
+    void init(){
+        mesh = LoadManager::getMesh("sphere.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+    }
+
+    void drawObject(){
+        glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
+        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
+        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+        //glUniform3f(shader->getHandle("uEye"),
+        //    CamManager::currentCam()->getViewVector().x,
+        //    CamManager::currentCam()->getViewVector().y,
+        //    CamManager::currentCam()->getViewVector().z);
+
+        Material::SetMaterial(Material::EMERALD, shader);
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), g_light));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
 };
 
 class Enemy : public Object3D{
@@ -191,6 +235,10 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
+        //glUniform3f(shader->getHandle("uEye"),
+        //    CamManager::currentCam()->getViewVector().x,
+        //    CamManager::currentCam()->getViewVector().y,
+        //    CamManager::currentCam()->getViewVector().z);
 
         Material::SetMaterial(Material::OBSIDIAN, shader);
         glm::vec3 pos = gameMap->getCubePos(currentCube);
