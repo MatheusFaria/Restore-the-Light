@@ -36,31 +36,33 @@ glm::mat4 Light::getLightMatrix(){
 
 
 const int LightManager::MAX_SIZE;
-std::vector<glm::mat4> LightManager::lights;
+std::vector<glm::vec4> LightManager::lightsPos;
+std::vector<glm::vec3> LightManager::lightsColor;
+std::vector<glm::vec3> LightManager::lightsFallOff;
 
 void LightManager::init(){
     Light * l = new Light();
     for (int i = 0; i < MAX_SIZE; i++){
-        addLight(l, i);
+        lightsPos.push_back(glm::vec4(l->pos, l->type));
+        lightsColor.push_back(l->color);
+        lightsFallOff.push_back(l->fallOff);
     }
 }
 
 void LightManager::addLight(Light * light, int pos){
     if (pos >= 0 && pos < MAX_SIZE){
-        lights[pos] = light->getLightMatrix();
+        lightsPos[pos] = glm::vec4(light->pos, light->type);
+        lightsColor[pos] = light->color;
+        lightsFallOff[pos] = light->fallOff;
         return;
     }
 
     Log::error("LightManager::addLight", "Unvalid pos", "", "");
 }
 
-Light * LightManager::getLight(int pos){
-    if (pos >= 0 && pos < MAX_SIZE){
-        return &Light(lights[pos]);
-    }
-    return NULL;
-}
 
-void LightManager::loadLights(const GLint handle){
-    glUniformMatrix4fv(handle, MAX_SIZE, GL_FALSE, glm::value_ptr(lights[0]));
+void LightManager::loadLights(const GLint posHandle, const GLint colorHandle, const GLint fallOffHandle){
+    glUniform4fv(posHandle, MAX_SIZE, &lightsPos[0][0]);
+    glUniform3fv(colorHandle, MAX_SIZE, &lightsColor[0][0]);
+    glUniform3fv(fallOffHandle, MAX_SIZE, &lightsFallOff[0][0]);
 }

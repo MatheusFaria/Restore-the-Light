@@ -1,25 +1,22 @@
 #version 120
 
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 4
-*/
+#define LIGHTS_NUMBER 5
 
 attribute vec4 aPosition;
 attribute vec3 aNormal;
+
+uniform vec4 uLightPos[LIGHTS_NUMBER];
 
 uniform mat4 uProjMatrix;
 uniform mat4 uViewMatrix;
 uniform mat4 uModelMatrix;
 uniform mat4 uMV_IT;
-uniform vec3 uLightPos;
 uniform vec3 uEye;
 
 varying vec3 normalVec;
-varying vec3 light;
-varying vec3 H;
-varying float d;
+varying vec3 outLight[LIGHTS_NUMBER];
+varying vec3 H[LIGHTS_NUMBER];
+varying float d[LIGHTS_NUMBER];
 
 void main()
 {
@@ -27,12 +24,15 @@ void main()
 	normalVec = normalize(vec3(uMV_IT*vec4(aNormal, 0)));
 	vec3 eye = uEye;
 
-	light = vec3(uViewMatrix * vec4(uLightPos,1));
-	d = distance(light, vertexPos);
-	light = normalize(light - vertexPos);
-	vec3 L = normalize(light);
-	vec3 V = normalize(eye - vertexPos);
-	H = normalize(L + V);
+	for(int i = 0; i < LIGHTS_NUMBER; i++){
+		outLight[i] = vec3(uViewMatrix * vec4(uLightPos[i].xyz,1));
+		d[i] = distance(outLight[i], vertexPos);
+		outLight[i] = normalize(outLight[i] - vertexPos);
+		
+		vec3 L = normalize(outLight[i]);
+		vec3 V = normalize(eye - vertexPos);
+		H[i] = normalize(L + V);
+	}
 
 	gl_Position = uProjMatrix * uViewMatrix * uModelMatrix * aPosition;
 }

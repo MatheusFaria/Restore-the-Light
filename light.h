@@ -34,14 +34,13 @@ public:
     static void init();
     static void addLight(Light * light, int pos);
 
-    static Light * getLight(int pos);
-
-    static void loadLights(const GLint handle);
+    static void loadLights(const GLint posHandle, const GLint colorHandle, const GLint fallOffHandle);
 
 private:
-    static const int MAX_SIZE = 20;
-    static std::vector<glm::mat4> lights;
-
+    static const int MAX_SIZE = 5;
+    static std::vector<glm::vec4> lightsPos;
+    static std::vector<glm::vec3> lightsColor;
+    static std::vector<glm::vec3> lightsFallOff;
 };
 
 #endif

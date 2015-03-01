@@ -8,6 +8,7 @@
 #include "material.h"
 #include "virtual_camera.h"
 #include "log.h"
+#include "light.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -51,15 +52,13 @@ public:
 
     void drawObject(){
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
         glUniform3f(shader->getHandle("uEye"), 
             CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        //glUniform3f(shader->getHandle("uEye"),
-        //    CamManager::currentCam()->getViewVector().x,
-        //    CamManager::currentCam()->getViewVector().y,
-        //    CamManager::currentCam()->getViewVector().z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::SILVER, shader);
         
@@ -148,14 +147,12 @@ public:
 
     void drawObject(){
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        //glUniform3f(shader->getHandle("uEye"),
-        //    CamManager::currentCam()->getViewVector().x,
-        //    CamManager::currentCam()->getViewVector().y,
-        //    CamManager::currentCam()->getViewVector().z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
@@ -192,14 +189,12 @@ public:
 
     void drawObject(){
         glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        //glUniform3f(shader->getHandle("uEye"),
-        //    CamManager::currentCam()->getViewVector().x,
-        //    CamManager::currentCam()->getViewVector().y,
-        //    CamManager::currentCam()->getViewVector().z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
@@ -231,14 +226,12 @@ public:
 
     void drawObject(){
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uLightPos"), g_light.x, g_light.y, g_light.z);
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        //glUniform3f(shader->getHandle("uEye"),
-        //    CamManager::currentCam()->getViewVector().x,
-        //    CamManager::currentCam()->getViewVector().y,
-        //    CamManager::currentCam()->getViewVector().z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::OBSIDIAN, shader);
         glm::vec3 pos = gameMap->getCubePos(currentCube);

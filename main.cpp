@@ -17,6 +17,7 @@
 #include "load_manager.h"
 #include "material.h"
 #include "virtual_camera.h"
+#include "light.h"
 
 #include "scene.h"
 #include "hero.h"
@@ -95,6 +96,20 @@ void setupCams(){
     }
 }
 
+void setupLights(){
+    LightManager::init();
+    LightManager::addLight(new Light(glm::vec3(0, 2, 0), glm::vec3(1, 0, 0), 
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 0);
+    LightManager::addLight(new Light(glm::vec3(-50, 2, 0), glm::vec3(0, 1, 0),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 1);
+    LightManager::addLight(new Light(glm::vec3(-50, 2, -50), glm::vec3(0, 0, 1),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 2);
+    LightManager::addLight(new Light(glm::vec3(0, 2, -50), glm::vec3(1, 1, 0),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 3);
+    LightManager::addLight(new Light(glm::vec3(-25, 2, -25), glm::vec3(1),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 4);
+}
+
 void installShaders(){
     Shader * shader = LoadManager::getShader("vert.glsl", "frag.glsl");
     shader->loadHandle("aPosition");
@@ -102,7 +117,6 @@ void installShaders(){
     shader->loadHandle("uProjMatrix");
     shader->loadHandle("uViewMatrix");
     shader->loadHandle("uModelMatrix");
-    shader->loadHandle("uLightPos");
     shader->loadHandle("UaColor");
     shader->loadHandle("UdColor");
     shader->loadHandle("UsColor");
@@ -110,6 +124,10 @@ void installShaders(){
     shader->loadHandle("Ushine");
     shader->loadHandle("uEye");
     shader->loadHandle("uMV_IT"); 
+
+    shader->loadHandle("uLightPos");
+    shader->loadHandle("uLightFallOff");
+    shader->loadHandle("uLightColor");
 }
 
 void installMeshes(){
@@ -166,6 +184,7 @@ int main(int argc, char **argv)
     GLSL::checkVersion();
 
     setupCams();
+    setupLights();
     installShaders();
     installMeshes();
 
