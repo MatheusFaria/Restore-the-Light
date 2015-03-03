@@ -362,7 +362,7 @@ public:
     Cube(){}
 
     void init(){
-        mesh = LoadManager::getMesh("cube-textures.obj");
+        mesh = LoadManager::getMesh("sphere-tex.obj");
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
@@ -394,7 +394,9 @@ public:
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
 
+        rot += 0.05f;
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
         bindModelMatrix("uModelMatrix");
 
         drawElements();
@@ -418,7 +420,7 @@ public:
         // Unbind the texture
         glBindTexture(GL_TEXTURE_2D, NULL);
     }
-
+    float rot = 0;
     BMPImage img;
     GLuint texture;
 
