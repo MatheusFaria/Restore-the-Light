@@ -1,12 +1,12 @@
-#include "bmp_loader.h"
+#include "image.h"
 
 #include <fstream>
 #include <iostream>
 
-BMPImage::BMPImage(){}
-BMPImage::BMPImage(std::string _path): path(_path){}
+Image::Image(){}
+Image::Image(std::string _path): path(_path){}
 
-int BMPImage::load(){
+int Image::loadBMP(){
 
     Uint8* datBuff[2] = { nullptr, nullptr }; // Header buffers
 

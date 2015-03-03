@@ -6,15 +6,18 @@
 
 #include "shader.h"
 #include "mesh.h"
+#include "image.h"
 
 class LoadManager {
 public:
     static Shader * getShader(std::string vertex, std::string fragment);
     static Mesh * getMesh(std::string name);
+    static Image * getImage(std::string name);
 
 private:
     static std::map<std::string, Shader *> shaders;
     static std::map<std::string, Mesh *> meshes;
+    static std::map<std::string, Image *> images;
 };
 
 #endif

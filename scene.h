@@ -14,7 +14,7 @@ typedef unsigned char Uint8;
 #include "light.h"
 #include "GLSL.h"
 
-#include "bmp_loader.h"
+#include "image.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -371,8 +371,7 @@ public:
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
 
-        img = BMPImage("bloomtex.bmp");
-        img.load();
+        LoadManager::getImage("bloomtex.bmp");
         textureLoad();
     }
 
@@ -410,7 +409,9 @@ public:
 
         // Create the texture. We get the offsets from the image, then we use it with the image's
         // pixel data to create it.
-        glTexImage2D(GL_TEXTURE_2D, 0, mode, img.width, img.height, 0, mode, GL_UNSIGNED_BYTE, img.pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, mode, LoadManager::getImage("bloomtex.bmp")->width, 
+            LoadManager::getImage("bloomtex.bmp")->height, 0, mode, GL_UNSIGNED_BYTE, 
+            LoadManager::getImage("bloomtex.bmp")->pixels);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -421,7 +422,6 @@ public:
         glBindTexture(GL_TEXTURE_2D, NULL);
     }
     float rot = 0;
-    BMPImage img;
     GLuint texture;
 
 };
