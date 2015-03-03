@@ -69,6 +69,10 @@ void Object3D::loadNormalBuffer(std::string bufferName){
     loadArrayBuffer(bufferName, mesh->getNormals());
 }
 
+void Object3D::loadTextureBuffer(std::string bufferName){
+    loadArrayBuffer(bufferName, mesh->getTexCoords());
+}
+
 Mesh * Object3D::getMesh(){
     return mesh;
 }
@@ -85,6 +89,12 @@ void Object3D::enableAttrArray3f(std::string aHandle, std::string bufHandle){
     GLSL::enableVertexAttribArray(shader->getHandle(aHandle));
     glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer(bufHandle));
     glVertexAttribPointer(shader->getHandle(aHandle), 3, GL_FLOAT, GL_FALSE, 0, 0);
+}
+
+void Object3D::enableAttrArray2f(std::string aHandle, std::string bufHandle){
+    GLSL::enableVertexAttribArray(shader->getHandle(aHandle));
+    glBindBuffer(GL_ARRAY_BUFFER, getArrayBuffer(bufHandle));
+    glVertexAttribPointer(shader->getHandle(aHandle), 2, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
 void Object3D::disableAttrArray(std::string aHandle){

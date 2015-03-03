@@ -35,6 +35,10 @@ std::vector<unsigned int> Mesh::getIndices(){
     return shape[0].mesh.indices;
 }
 
+std::vector<float> Mesh::getTexCoords(){
+    return shape[0].mesh.texcoords;
+}
+
 std::string Mesh::getFileName(){
     return filename;
 }

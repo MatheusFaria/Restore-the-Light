@@ -94,11 +94,13 @@ void setupCams(){
         CamManager::addCam(mainCam);
         CamManager::getCam(i)->projectionMatrix = Projection;
     }
+
+    CamManager::setCam(0);
 }
 
 void setupLights(){
     LightManager::init();
-    LightManager::addLight(new Light(glm::vec3(0, 2, 0), glm::vec3(1, 0, 0), 
+    LightManager::addLight(new Light(glm::vec3(0, 2, 0), glm::vec3(1, 1, 1), 
         glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 0);
     LightManager::addLight(new Light(glm::vec3(-50, 2, 0), glm::vec3(0, 1, 0),
         glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 1);
@@ -128,6 +130,9 @@ void installShaders(){
     shader->loadHandle("uLightPos");
     shader->loadHandle("uLightFallOff");
     shader->loadHandle("uLightColor");
+
+    shader->loadHandle("uTextureID");
+    shader->loadHandle("aTexCoord");
 }
 
 void installMeshes(){
@@ -159,7 +164,7 @@ int main(int argc, char **argv)
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
+    //glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // Initialize glad
@@ -197,9 +202,9 @@ int main(int argc, char **argv)
 
     g_light = gameMap->getCubePos(rows/2*rows + cols/2);
 
-    hero = new Hero(gameMap, 0);
-    hero->init();
-    gameMap->addChild(hero);
+    //hero = new Hero(gameMap, 0);
+    //hero->init();
+    //gameMap->addChild(hero);
 
     LightObject * l = new LightObject();
     l->init();
@@ -238,15 +243,20 @@ int main(int argc, char **argv)
         }
     }
 
+    Cube * c = new Cube();
+    c->init();
+
     assert(glGetError() == GL_NO_ERROR);
     do{
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        hero->checkInput(window);
+        //hero->checkInput(window);
 
-        gameMap->draw();
-        l->draw();
+        //gameMap->draw();
+        //l->draw();
+
+        c->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

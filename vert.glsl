@@ -4,6 +4,7 @@
 
 attribute vec4 aPosition;
 attribute vec3 aNormal;
+attribute vec2 aTexCoord;
 
 uniform vec4 uLightPos[LIGHTS_NUMBER];
 
@@ -13,6 +14,7 @@ uniform mat4 uModelMatrix;
 uniform mat4 uMV_IT;
 uniform vec3 uEye;
 
+varying vec2 texCoord;
 varying vec3 normalVec;
 varying vec3 outLight[LIGHTS_NUMBER];
 varying vec3 H[LIGHTS_NUMBER];
@@ -34,6 +36,7 @@ void main()
 		H[i] = normalize(L + V);
 	}
 
+	texCoord = aTexCoord;
 	gl_Position = uProjMatrix * uViewMatrix * uModelMatrix * aPosition;
 }
 

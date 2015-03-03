@@ -1,5 +1,8 @@
 #ifndef __SCENE_H__
 #define __SCENE_H__
+#include <fstream>
+
+typedef unsigned char Uint8;
 
 #include "mesh.h"
 #include "shader.h"
@@ -9,6 +12,9 @@
 #include "virtual_camera.h"
 #include "log.h"
 #include "light.h"
+#include "GLSL.h"
+
+#include "bmp_loader.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -351,5 +357,71 @@ private:
     }
 };
 
+class Cube : public Object3D{
+public:
+    Cube(){}
+
+    void init(){
+        mesh = LoadManager::getMesh("cube-textures.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadTextureBuffer("texBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+
+        img = BMPImage("bricks.bmp");
+        img.load();
+        textureLoad();
+    }
+
+    void drawObject(){
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(shader->getHandle("uTextureID"), 0);
+        
+        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
+
+        Material::SetMaterial(Material::EMERALD, shader);
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
+
+    void textureLoad(){
+        glGenTextures(1, &texture);             // Generate a texture
+        glBindTexture(GL_TEXTURE_2D, texture); // Bind that texture temporarily
+
+        GLint mode = GL_RGB;                   // Set the mode
+
+        // Create the texture. We get the offsets from the image, then we use it with the image's
+        // pixel data to create it.
+        glTexImage2D(GL_TEXTURE_2D, 0, mode, img.width, img.height, 0, mode, GL_UNSIGNED_BYTE, img.pixels);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        // Unbind the texture
+        glBindTexture(GL_TEXTURE_2D, NULL);
+    }
+
+    BMPImage img;
+    GLuint texture;
+
+};
 
 #endif

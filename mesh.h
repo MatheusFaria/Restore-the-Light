@@ -23,6 +23,7 @@ public:
     std::vector<float> getVertices();
     std::vector<unsigned int> getIndices();
     std::string getFileName();
+    std::vector<float> getTexCoords();
 
 private:
     std::string filename;

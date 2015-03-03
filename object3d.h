@@ -21,30 +21,38 @@ public:
     Object3D(Mesh * _mesh, Shader * _shader);
 
     void addTransformation(glm::mat4 matrix);
+    void loadIdentity();
+
     void loadArrayBuffer(std::string bufferName, std::vector<float> v);
     void loadElementBuffer(std::vector<unsigned int> v);
     void loadElementBuffer();
     void loadVertexBuffer(std::string bufferName);
     void loadNormalBuffer(std::string bufferName);
+    void loadTextureBuffer(std::string bufferName);
+
     void enableAttrArray3f(std::string aHandle, std::string bufHandle);
+    void enableAttrArray2f(std::string aHandle, std::string bufHandle);
     void disableAttrArray(std::string aHandle);
-    void loadIdentity();
+    
+    
     void unbindAll();
+    
     void bindElements();
-    void drawElements();
-    void addChild(Object3D * child);
-    void setParent(Object3D * _parent);
     void bindUniformMatrix4f(const GLint handle, glm::mat4 matrix);
     void bindModelMatrix(std::string handle);
     void bindViewMatrix(std::string handle);
     void bindProjectionMatrix(std::string handle);
+    
+    void addChild(Object3D * child);
+    void setParent(Object3D * _parent);
+
     Mesh * getMesh();
     GLuint getElementBuffer();
     GLuint getArrayBuffer(std::string bufferName);
     glm::mat4 getModelMatrix();
 
     void draw();
-
+    void drawElements();
     virtual void drawObject() = 0;
 
 protected:

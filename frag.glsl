@@ -7,9 +7,13 @@ uniform vec3 UaColor;
 uniform vec3 UsColor;
 uniform vec3 UeColor;
 uniform float Ushine;
+
+uniform sampler2D uTextureID;
+
 uniform vec3 uLightFallOff[LIGHTS_NUMBER];
 uniform vec3 uLightColor[LIGHTS_NUMBER];
 
+varying vec2 texCoord;
 varying vec3 normalVec;
 varying vec3 outLight[LIGHTS_NUMBER];
 varying vec3 H[LIGHTS_NUMBER];
@@ -42,7 +46,11 @@ void main()
 		I += Ic*(Id + Is)/(a + b*d[i] + c*d[i]*d[i]);
 		//I += Ic*(Id + Is)/(a + b*d + c*d*d);
 	}
-	I += Ia + Ie;
+	I +=  Ia + Ie;
 
-	gl_FragColor = vec4(I.xyz, 1.0);
+	vec4 tex = texture2D(uTextureID, texCoord);
+	tex.w = 1;
+
+	gl_FragColor = tex*vec4(I.xyz, 1.0);
+	//gl_FragColor = vec4(I.xyz, 1.0);
 }
