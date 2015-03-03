@@ -15,6 +15,7 @@ typedef unsigned char Uint8;
 #include "GLSL.h"
 
 #include "image.h"
+#include "texture.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -371,15 +372,16 @@ public:
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
 
-        LoadManager::getImage("bloomtex.bmp");
-        textureLoad();
+        Texture * tex = new Texture(LoadManager::getImage("bloomtex.bmp"));
+        tex->load();
+        TextureManager::addTexture("cubetex", tex);
     }
 
     void drawObject(){
         enableAttrArray2f("aTexCoord", "texBufObj");
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::getTexture("cubetex")->getTexture());
         glUniform1i(shader->getHandle("uTextureID"), 0);
         
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
@@ -400,30 +402,7 @@ public:
 
         drawElements();
     }
-
-    void textureLoad(){
-        glGenTextures(1, &texture);             // Generate a texture
-        glBindTexture(GL_TEXTURE_2D, texture); // Bind that texture temporarily
-
-        GLint mode = GL_RGB;                   // Set the mode
-
-        // Create the texture. We get the offsets from the image, then we use it with the image's
-        // pixel data to create it.
-        glTexImage2D(GL_TEXTURE_2D, 0, mode, LoadManager::getImage("bloomtex.bmp")->width, 
-            LoadManager::getImage("bloomtex.bmp")->height, 0, mode, GL_UNSIGNED_BYTE, 
-            LoadManager::getImage("bloomtex.bmp")->pixels);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        // Unbind the texture
-        glBindTexture(GL_TEXTURE_2D, NULL);
-    }
     float rot = 0;
-    GLuint texture;
-
 };
 
 #endif
