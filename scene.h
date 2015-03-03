@@ -371,7 +371,7 @@ public:
 
         shader = LoadManager::getShader("vert.glsl", "frag.glsl");
 
-        img = BMPImage("bricks.bmp");
+        img = BMPImage("bloomtex.bmp");
         img.load();
         textureLoad();
     }

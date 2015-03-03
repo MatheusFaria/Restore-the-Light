@@ -4,6 +4,11 @@
 #include <string>
 #include "GLSL.h"
 
+/*Code extracted and modified from: 
+http://www.cplusplus.com/articles/GwvU7k9E/
+
+NOTE: Files must be 24-bit Bitmap format (BMP)*/
+
 typedef unsigned char Uint8;
 
 class BMPImage{
