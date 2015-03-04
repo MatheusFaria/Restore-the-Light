@@ -5,7 +5,7 @@
 #include "GLIncludes.h"
 
 /*Code extracted and modified from: 
-http://www.cplusplus.com/articles/GwvU7k9E/
+http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
 
 NOTE: Files must be 24-bit Bitmap format (BMP)*/
 

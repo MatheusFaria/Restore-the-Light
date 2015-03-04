@@ -18,16 +18,12 @@
 #include "material.h"
 #include "virtual_camera.h"
 #include "light.h"
-
-#include "scene.h"
-#include "hero.h"
+#include "texture.h"
+#include "image.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
 #include "glm/gtc/type_ptr.hpp" //value_ptr
-
-
-
 
 GLFWwindow* window;
 using namespace std;
@@ -37,27 +33,63 @@ int g_height;
 bool g_lock_mouse = true;
 bool g_first_mouse_movement = true;
 
-Hero * hero;
+class Cube : public Object3D{
+public:
+    Cube(){}
+
+    void init(){
+        mesh = LoadManager::getMesh("sphere-tex.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadTextureBuffer("texBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+
+        Texture * tex = new Texture(LoadManager::getImage("bloomtex.bmp"));
+        tex->load();
+        TextureManager::addTexture("cubetex", tex);
+    }
+
+    void drawObject(){
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::getTexture("cubetex")->getTexture());
+        glUniform1i(shader->getHandle("uTextureID"), 0);
+
+        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
+
+        Material::SetMaterial(Material::EMERALD, shader);
+        loadIdentity();
+
+        rot += 0.05f;
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
+    float rot = 0;
+};
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     //Move light in X axis
-    //if (key == GLFW_KEY_L && action == GLFW_PRESS)
-    //    g_lock_mouse = !g_lock_mouse;
-
-    if (key == GLFW_KEY_I && action == GLFW_PRESS)
-        g_light.y += 0.1f;
-    else if (key == GLFW_KEY_K && action == GLFW_PRESS)
-        g_light.y -= 0.1f;
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
-        g_light.x += 0.1f;
-    else if (key == GLFW_KEY_J && action == GLFW_PRESS)
-        g_light.x -= 0.1f;
+        g_lock_mouse = !g_lock_mouse;
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (hero){
+    /*if (hero){
         if (hero->isFPS()){
             if (g_first_mouse_movement){
                 g_first_mouse_movement = false;
@@ -81,9 +113,8 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
                 glfwSetCursorPos(window, g_width / 2, g_height / 2);
             }
         }
-    }
+    }*/
 }
-
 
 void setupCams(){
     int numberCameras = 3;
@@ -133,10 +164,135 @@ void installShaders(){
 
     shader->loadHandle("uTextureID");
     shader->loadHandle("aTexCoord");
+
+    shader = LoadManager::getShader("vert-fbo.glsl", "frag-fbo.glsl");
+    shader->loadHandle("aPosition");
+
+    shader = LoadManager::getShader("vert-fbo2.glsl", "frag-fbo2.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uTextureID");
 }
 
 void installMeshes(){
     LoadManager::getMesh("sphere.obj");
+}
+
+void printFramebufferInfo(GLenum target, GLuint fbo) {
+    //http://www.lighthouse3d.com/tutorials/glsl-core-tutorial/fragment-shader/
+    glBindFramebuffer(target, fbo);
+
+    int res;
+
+    GLint buffer;
+    int i = 0;
+    do {
+        glGetIntegerv(GL_DRAW_BUFFER0 + i, &buffer);
+
+        if (buffer != GL_NONE) {
+
+            printf("Shader Output Location %d - color attachment %d\n", i, buffer - GL_COLOR_ATTACHMENT0);
+
+            glGetFramebufferAttachmentParameteriv(target, buffer, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &res);
+            printf("\tAttachment Type: %s\n", res == GL_TEXTURE ? "Texture" : "Render Buffer");
+            glGetFramebufferAttachmentParameteriv(target, buffer, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &res);
+            printf("\tAttachment object name: %d\n", res);
+        }
+        ++i;
+
+    } while (buffer != GL_NONE);
+}
+
+GLuint vertexbuffer;
+void setupSquare(){
+    static const GLfloat g_vertex_buffer_data[] = {
+        -0.9f, -0.9f, 0.0f,
+        -0.9f, 0.9f, 0.0f,
+        -0.2f, 0.9f, 0.0f,
+
+        -0.8f, -0.9f, 0.0f,
+        0.0f, 0.9f, 0.0f,
+        0.8f, -0.9f, 0.0f,
+
+        0.9f, -0.9f, 0.0f,
+        0.9f, 0.9f, 0.0f,
+        0.2f, 0.9f, 0.0f,
+    };
+
+
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+
+}
+
+void drawRedSquare(){
+
+    Shader * shader = LoadManager::getShader("vert-fbo.glsl", "frag-fbo.glsl");
+    glUseProgram(shader->getId());
+
+    // 1rst attribute buffer : vertices
+    glEnableVertexAttribArray(shader->getHandle("aPosition"));
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    // Draw the triangle !
+    glDrawArrays(GL_TRIANGLES, 0, 3 * 3); // 3 indices starting at 0 -> 1 triangle
+
+    glDisableVertexAttribArray(shader->getHandle("aPosition"));
+}
+
+
+
+
+GLuint fbo = 0;    
+GLuint colorTex, depthTex;
+void createFrameBuffers(){
+    glGenFramebuffers(1, &fbo); // Create Framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo); // Bind framebuffer for drawing
+
+    if (fbo == 0)
+        cout << "Could not create FBO" << endl;
+
+
+    /*glFramebufferParameteri(GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, 512);
+    glFramebufferParameteri(GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, 512);
+    glFramebufferParameteri(GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_SAMPLES, 4);*/
+
+    /*GLuint rb;
+    glGenRenderbuffers(1, &rb);
+    glBindRenderbuffer(GL_RENDERBUFFER, rb);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);*/
+
+    glGenTextures(1, &colorTex);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    
+    glGenRenderbuffers(1, &depthTex);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthTex);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthTex);
+
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTex, 0);
+
+    GLenum attchs[1] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, attchs);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+    if (e != GL_FRAMEBUFFER_COMPLETE)
+        cout << "Problem in FBO" << endl;
+
+    printFramebufferInfo(GL_FRAMEBUFFER, fbo);
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
 int main(int argc, char **argv)
@@ -164,11 +320,11 @@ int main(int argc, char **argv)
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
-    //glfwSetCursorPosCallback(window, cursor_position_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // Initialize glad
-    if (!gladLoadGL()) {
+    if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Unable to initialize glad");
         glfwDestroyWindow(window);
         glfwTerminate();
@@ -180,10 +336,11 @@ int main(int argc, char **argv)
 
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_2D);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Set the background color
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
     glPointSize(18);
 
     GLSL::checkVersion();
@@ -193,70 +350,61 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
+    createFrameBuffers();
 
-    int rows = 25, cols = 25;
-
-    //GameMap * gameMap = new GameMap("cccccc...cc...cc...cccccc", rows, cols);
-    GameMap * gameMap = new GameMap(string(rows*cols, 'c'), rows, cols);
-    gameMap->init();
-
-    g_light = gameMap->getCubePos(rows/2*rows + cols/2);
-
-    //hero = new Hero(gameMap, 0);
-    //hero->init();
-    //gameMap->addChild(hero);
-
-    LightObject * l = new LightObject();
-    l->init();
-
-    srand(time(NULL));
-    int enemies[20] = {0};
-    for (int i = 0; i < 1; i++){
-        int cube_pos;
-        bool in = true;
-        do{
-            cube_pos = (rand() % (rows*cols));
-            if (cube_pos == 0)
-                cube_pos = 1;
-            for (int j = 0; j < i; j++){
-                if (cube_pos == enemies[j]){
-                    in = false;
-                    break;
-                }
-                else{
-                    in = true;
-                }
-            }
-        } while (!in);
-        enemies[i] = cube_pos;
-
-        int randomRotation = rand() % 360;
-        if (i < 10){
-            Enemy * e = new Enemy(gameMap, 6*rows + 4, 30);
-            e->init();
-            gameMap->addChild(e);
-        }
-        else {
-            Item* item = new Item(gameMap, cube_pos, randomRotation);
-            item->init();
-            gameMap->addChild(item);
-        }
-    }
-
-    Cube * c = new Cube();
-    c->init();
+    setupSquare();
+    Shader * shader;
 
     assert(glGetError() == GL_NO_ERROR);
     do{
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //hero->checkInput(window);
+        glViewport(0, 0, 512, 512);
 
-        //gameMap->draw();
-        //l->draw();
+        shader = LoadManager::getShader("vert-fbo.glsl", "frag-fbo.glsl");
+        glUseProgram(shader->getId());
 
-        c->draw();
+        // 1rst attribute buffer : vertices
+        glEnableVertexAttribArray(shader->getHandle("aPosition"));
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        // Draw the triangle !
+        glDrawArrays(GL_TRIANGLES, 0, 3 * 3); // 3 indices starting at 0 -> 1 triangle
+
+        glDisableVertexAttribArray(shader->getHandle("aPosition"));
+
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, 512, 512);
+
+
+
+        shader = LoadManager::getShader("vert-fbo2.glsl", "frag-fbo2.glsl");
+        glUseProgram(shader->getId());
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorTex);
+        glUniform1i(shader->getHandle("uTextureID"), 0);
+
+        // 1rst attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        // Draw the triangle !
+        glDrawArrays(GL_TRIANGLES, 0, 3 * 3); // 3 indices starting at 0 -> 1 triangle
+
+        glDisableVertexAttribArray(shader->getHandle("aPosition"));
+
+
 
         // Swap buffers
         glfwSwapBuffers(window);
