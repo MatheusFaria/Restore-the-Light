@@ -18,6 +18,10 @@ private:
     static std::map<std::string, Shader *> shaders;
     static std::map<std::string, Mesh *> meshes;
     static std::map<std::string, Image *> images;
+
+    static const std::string shaderFolder;
+    static const std::string meshFolder;
+    static const std::string imageFolder;
 };
 
 #endif

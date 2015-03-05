@@ -3,7 +3,8 @@
 *.swo
 *~
 Debug/
-glm/
+libs/
 *.dll
 *.vcxproj
 *.filters
+Thumbs.db
