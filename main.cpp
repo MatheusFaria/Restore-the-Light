@@ -20,6 +20,7 @@
 #include "light.h"
 #include "texture.h"
 #include "image.h"
+#include "fbo.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
@@ -123,7 +124,6 @@ public:
     GLuint tex;
 };
 
-
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     //Move light in X axis
@@ -214,72 +214,6 @@ void installMeshes(){
     LoadManager::getMesh("sphere.obj");
 }
 
-void printFramebufferInfo(GLenum target, GLuint fbo) {
-    //http://www.lighthouse3d.com/tutorials/glsl-core-tutorial/fragment-shader/
-    glBindFramebuffer(target, fbo);
-
-    int res;
-
-    GLint buffer;
-    int i = 0;
-    do {
-        glGetIntegerv(GL_DRAW_BUFFER0 + i, &buffer);
-
-        if (buffer != GL_NONE) {
-
-            printf("Shader Output Location %d - color attachment %d\n", i, buffer - GL_COLOR_ATTACHMENT0);
-
-            glGetFramebufferAttachmentParameteriv(target, buffer, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &res);
-            printf("\tAttachment Type: %s\n", res == GL_TEXTURE ? "Texture" : "Render Buffer");
-            glGetFramebufferAttachmentParameteriv(target, buffer, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &res);
-            printf("\tAttachment object name: %d\n", res);
-        }
-        ++i;
-
-    } while (buffer != GL_NONE);
-}
-
-
-GLuint fbo = 0;    
-GLuint colorTex, depthTex;
-void createFrameBuffers(){
-    glGenFramebuffers(1, &fbo); // Create Framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo); // Bind framebuffer for drawing
-
-    if (fbo == 0)
-        cout << "Could not create FBO" << endl;
-
-    glGenTextures(1, &colorTex);
-    glBindTexture(GL_TEXTURE_2D, colorTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    glGenRenderbuffers(1, &depthTex);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthTex);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, g_width, g_height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthTex);
-
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTex, 0);
-
-    GLenum attchs[1] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers(1, attchs);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    GLenum e = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
-    if (e != GL_FRAMEBUFFER_COMPLETE)
-        cout << "Problem in FBO" << endl;
-
-    printFramebufferInfo(GL_FRAMEBUFFER, fbo);
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-}
-
 int main(int argc, char **argv)
 {
     // Initialise GLFW
@@ -335,27 +269,29 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
-    createFrameBuffers();
+    //createFrameBuffers();
+
+    FBO myFBO = FBO(g_width, g_height, 1, true);
+    myFBO.init();
 
     Ball * ball = new Ball();
     ball->init();
 
-    Cube * cube = new Cube(colorTex);
+    Cube * cube = new Cube(myFBO.getTexture(0));
     cube->init();
 
     assert(glGetError() == GL_NO_ERROR);
     do{
         glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+        myFBO.enable();
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ball->draw();
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        myFBO.disable();
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
