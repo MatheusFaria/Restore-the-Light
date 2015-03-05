@@ -33,9 +33,9 @@ int g_height;
 bool g_lock_mouse = true;
 bool g_first_mouse_movement = true;
 
-class Cube : public Object3D{
+class Ball : public Object3D{
 public:
-    Cube(){}
+    Ball(){}
 
     void init(){
         mesh = LoadManager::getMesh("sphere-tex.obj");
@@ -79,6 +79,50 @@ public:
     }
     float rot = 0;
 };
+
+class Cube : public Object3D{
+public:
+    Cube(GLuint _tex): tex(_tex){}
+
+    void init(){
+        mesh = LoadManager::getMesh("cube-textures.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadTextureBuffer("texBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+    }
+
+    void drawObject(){
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glUniform1i(shader->getHandle("uTextureID"), 0);
+
+        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+        LightManager::loadLights(shader->getHandle("uLightPos"),
+            shader->getHandle("uLightColor"),
+            shader->getHandle("uLightFallOff"));
+
+        Material::SetMaterial(Material::EMERALD, shader);
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
+    float rot = 45;
+    GLuint tex;
+};
+
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -164,13 +208,6 @@ void installShaders(){
 
     shader->loadHandle("uTextureID");
     shader->loadHandle("aTexCoord");
-
-    shader = LoadManager::getShader("vert-fbo.glsl", "frag-fbo.glsl");
-    shader->loadHandle("aPosition");
-
-    shader = LoadManager::getShader("vert-fbo2.glsl", "frag-fbo2.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uTextureID");
 }
 
 void installMeshes(){
@@ -202,47 +239,6 @@ void printFramebufferInfo(GLenum target, GLuint fbo) {
     } while (buffer != GL_NONE);
 }
 
-GLuint vertexbuffer;
-void setupSquare(){
-    static const GLfloat g_vertex_buffer_data[] = {
-        -0.9f, -0.9f, 0.0f,
-        -0.9f, 0.9f, 0.0f,
-        -0.2f, 0.9f, 0.0f,
-
-        -0.8f, -0.9f, 0.0f,
-        0.0f, 0.9f, 0.0f,
-        0.8f, -0.9f, 0.0f,
-
-        0.9f, -0.9f, 0.0f,
-        0.9f, 0.9f, 0.0f,
-        0.2f, 0.9f, 0.0f,
-    };
-
-
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-}
-
-void drawRedSquare(){
-
-    Shader * shader = LoadManager::getShader("vert-fbo.glsl", "frag-fbo.glsl");
-    glUseProgram(shader->getId());
-
-    // 1rst attribute buffer : vertices
-    glEnableVertexAttribArray(shader->getHandle("aPosition"));
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, 3 * 3); // 3 indices starting at 0 -> 1 triangle
-
-    glDisableVertexAttribArray(shader->getHandle("aPosition"));
-}
-
-
-
 
 GLuint fbo = 0;    
 GLuint colorTex, depthTex;
@@ -253,20 +249,9 @@ void createFrameBuffers(){
     if (fbo == 0)
         cout << "Could not create FBO" << endl;
 
-
-    /*glFramebufferParameteri(GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, 512);
-    glFramebufferParameteri(GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, 512);
-    glFramebufferParameteri(GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_SAMPLES, 4);*/
-
-    /*GLuint rb;
-    glGenRenderbuffers(1, &rb);
-    glBindRenderbuffer(GL_RENDERBUFFER, rb);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);*/
-
     glGenTextures(1, &colorTex);
     glBindTexture(GL_TEXTURE_2D, colorTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -275,7 +260,7 @@ void createFrameBuffers(){
     
     glGenRenderbuffers(1, &depthTex);
     glBindRenderbuffer(GL_RENDERBUFFER, depthTex);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, g_width, g_height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthTex);
 
 
@@ -352,59 +337,32 @@ int main(int argc, char **argv)
 
     createFrameBuffers();
 
-    setupSquare();
-    Shader * shader;
+    Ball * ball = new Ball();
+    ball->init();
+
+    Cube * cube = new Cube(colorTex);
+    cube->init();
 
     assert(glGetError() == GL_NO_ERROR);
     do{
+        glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
+
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glViewport(0, 0, 512, 512);
-
-        shader = LoadManager::getShader("vert-fbo.glsl", "frag-fbo.glsl");
-        glUseProgram(shader->getId());
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(shader->getHandle("aPosition"));
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 3 * 3); // 3 indices starting at 0 -> 1 triangle
-
-        glDisableVertexAttribArray(shader->getHandle("aPosition"));
-
+        ball->draw();
 
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, 512, 512);
 
-
-
-        shader = LoadManager::getShader("vert-fbo2.glsl", "frag-fbo2.glsl");
-        glUseProgram(shader->getId());
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorTex);
-        glUniform1i(shader->getHandle("uTextureID"), 0);
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 3 * 3); // 3 indices starting at 0 -> 1 triangle
-
-        glDisableVertexAttribArray(shader->getHandle("aPosition"));
-
-
+        cube->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);
