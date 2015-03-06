@@ -1,14 +1,14 @@
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 4
-* Code modifed from ZJ Wood
-*/
-
 #include <iostream>
 #include <cassert>
 #include <vector>
 #include <ctime>
+#include <sstream>
+#include <fstream>
+
+#include "GaussianBlur.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
+#include "glm/gtc/type_ptr.hpp" //value_ptr
 
 #include "GLSL.h"
 #include "mesh.h"
@@ -22,9 +22,7 @@
 #include "image.h"
 #include "fbo.h"
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
-#include "glm/gtc/type_ptr.hpp" //value_ptr
+#define GAUSS_KERNEL_SIZE 35
 
 GLFWwindow* window;
 using namespace std;
@@ -39,81 +37,35 @@ public:
     Ball(){}
 
     void init(){
-        mesh = LoadManager::getMesh("sphere-tex.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadTextureBuffer("texBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-
-        Texture * tex = new Texture(LoadManager::getImage("bloomtex.bmp"));
-        tex->load();
-        TextureManager::addTexture("cubetex", tex);
-    }
-
-    void drawObject(){
-        enableAttrArray2f("aTexCoord", "texBufObj");
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::getTexture("cubetex")->getTexture());
-        glUniform1i(shader->getHandle("uTextureID"), 0);
-
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
-
-        Material::SetMaterial(Material::EMERALD, shader);
-        loadIdentity();
-
-        rot += 0.05f;
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
-        addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-    float rot = 0;
-};
-
-class Cube : public Object3D{
-public:
-    Cube(GLuint _tex): tex(_tex){}
-
-    void init(){
         mesh = LoadManager::getMesh("cube-textures.obj");
 
         loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
         loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+        shader = LoadManager::getShader("vert-tex.glsl", "frag-map.glsl");
+
+        tex = TextureManager::getTexture("yellow.bmp");
+        atex = TextureManager::getTexture("red-gray-alpha.bmp");
+        //tex = TextureManager::getTexture("bricks.bmp");
     }
 
     void drawObject(){
         enableAttrArray2f("aTexCoord", "texBufObj");
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glUniform1i(shader->getHandle("uTextureID"), 0);
+        glBindTexture(GL_TEXTURE_2D, tex->getTexture());
+        glUniform1i(shader->getHandle("uTexID"), 0);
 
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, atex->getTexture());
+        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
 
-        Material::SetMaterial(Material::EMERALD, shader);
+        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
+
         loadIdentity();
 
+        //rot += 0.05f;
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
         addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
         bindModelMatrix("uModelMatrix");
@@ -121,7 +73,83 @@ public:
         drawElements();
     }
     float rot = 45;
+    Texture * tex, * atex;
+};
+
+class Plane : public Object3D{
+public:
+    Plane(GLuint _blur, GLuint _tex, glm::vec3 _trans) 
+        : blur(_blur), tex(_tex), trans(_trans){}
+
+    void init(){
+        mesh = LoadManager::getMesh("plane.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadTextureBuffer("texBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert-tex.glsl", "frag-glow.glsl");
+    }
+
+    void drawObject(){
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glUniform1i(shader->getHandle("uTexID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, blur);
+        glUniform1i(shader->getHandle("uGlowTexID"), 1);
+
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), trans));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
+    GLuint tex, blur;
+    glm::vec3 trans;
+    bool h;
+};
+
+class PlaneBlur : public Object3D{
+public:
+    PlaneBlur(GLuint _tex, glm::vec3 _trans, bool _h) : tex(_tex), trans(_trans), h(_h){}
+
+    void init(){
+        mesh = LoadManager::getMesh("plane.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadTextureBuffer("texBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert-tex.glsl", "temp.glsl");
+    }
+
+    void drawObject(){
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glUniform1i(shader->getHandle("uTexID"), 0);
+
+        if (h)
+            glUniform2f(shader->getHandle("uDir"), 1, 0);
+        else
+            glUniform2f(shader->getHandle("uDir"), 0, 1);
+
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), trans));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
     GLuint tex;
+    glm::vec3 trans;
+    bool h;
 };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -188,7 +216,9 @@ void setupLights(){
 }
 
 void installShaders(){
-    Shader * shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+    Shader * shader;
+
+    shader = LoadManager::getShader("vert.glsl", "frag.glsl");
     shader->loadHandle("aPosition");
     shader->loadHandle("aNormal");
     shader->loadHandle("uProjMatrix");
@@ -208,14 +238,105 @@ void installShaders(){
 
     shader->loadHandle("uTextureID");
     shader->loadHandle("aTexCoord");
+
+    shader = LoadManager::getShader("vert-tex.glsl", "frag-map.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uProjMatrix");
+    shader->loadHandle("uViewMatrix");
+    shader->loadHandle("uModelMatrix");
+    
+    shader->loadHandle("uTexID");
+    shader->loadHandle("aTexCoord");
+    
+    shader->loadHandle("uAlphaTexID");
+
+    shader->loadHandle("uCompleteGlow");
+
+    shader = LoadManager::getShader("vert-tex.glsl", "frag-glow.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uProjMatrix");
+    shader->loadHandle("uViewMatrix");
+    shader->loadHandle("uModelMatrix");
+
+    shader->loadHandle("uTexID");
+    shader->loadHandle("aTexCoord");
+
+    shader->loadHandle("uGlowTexID");
+
+
+    shader = LoadManager::getShader("vert-tex.glsl", "temp.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uProjMatrix");
+    shader->loadHandle("uViewMatrix");
+    shader->loadHandle("uModelMatrix");
+
+    shader->loadHandle("uTexID");
+    shader->loadHandle("aTexCoord");
+    shader->loadHandle("uDir");
+
+    shader = LoadManager::getShader("vert-tex.glsl", "frag-tex.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uProjMatrix");
+    shader->loadHandle("uViewMatrix");
+    shader->loadHandle("uModelMatrix");
+
+    shader->loadHandle("uTexID");
+    shader->loadHandle("aTexCoord");
 }
 
 void installMeshes(){
     LoadManager::getMesh("sphere.obj");
 }
 
+
+void createGaussBlurShader(){
+    vector<float> kernel = GetAppropriateSeparableGauss(GAUSS_KERNEL_SIZE);
+    
+    std::stringstream shader;
+    string eol = "\n";
+
+    shader << 
+        "#version 120" << eol << 
+        "uniform sampler2D uTexID;" << eol <<
+        "uniform vec2 uDir;" << eol <<
+        "varying vec2 vTexCoord;" << eol <<
+
+        "vec3 gaussianBlur2Pass(sampler2D texID, vec2 texel, float resolution, float radius, vec2 dir){" << eol <<
+        "    vec4 sum = vec4(0.0);" << eol <<
+
+        "    float blur = radius / resolution;" << eol <<
+
+        "    const int kernel_size = " << kernel.size() << ";" << eol <<
+        "    const int half_kernel_size = kernel_size / 2;" << eol <<
+        "    float gauss_kernel[] = {" << eol;
+                for (int i = 0; i < kernel.size(); i++)
+                     shader << "        " << kernel[i] << "," << eol;
+    shader <<
+        "    };" << eol <<
+
+        "    for (int i = -half_kernel_size; i <= half_kernel_size; i++){" << eol <<
+        "        sum += texture2D(texID, vec2(texel.x - i*blur*dir.x, texel.y - i*blur*dir.y)) * gauss_kernel[i + half_kernel_size];" << eol <<
+        "    }" << eol <<
+
+        "    return sum;" << eol <<
+        "}" << eol <<
+
+        "void main()" << eol <<
+        "{" << eol <<
+        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 3, uDir), 1);" << eol <<
+        "}" << eol;
+
+    ofstream file;
+    file.open("shaders/temp.glsl");
+    file << shader.str();
+    file.close();
+
+}
+
 int main(int argc, char **argv)
 {
+    createGaussBlurShader();
+
     // Initialise GLFW
     if (!glfwInit())
     {
@@ -271,18 +392,31 @@ int main(int argc, char **argv)
 
     //createFrameBuffers();
 
-    FBO myFBO = FBO(g_width, g_height, 1, true);
+    FBO myFBO = FBO(g_width, g_height, 2, true);
     myFBO.init();
+
+    FBO myFBO_BlurH = FBO(g_width, g_height, 1, true);
+    myFBO_BlurH.init();
+
+    FBO myFBO_BlurV = FBO(g_width, g_height, 1, true);
+    myFBO_BlurV.init();
 
     Ball * ball = new Ball();
     ball->init();
 
-    Cube * cube = new Cube(myFBO.getTexture(0));
-    cube->init();
+    PlaneBlur * plane1 = new PlaneBlur(myFBO.getTexture(1), glm::vec3(0, 0, 0), true);
+    plane1->init();
+
+    PlaneBlur * plane2 = new PlaneBlur(myFBO_BlurH.getTexture(0), glm::vec3(0, 0, 0), false);
+    plane2->init();
+
+    Plane * plane3 = new Plane(myFBO_BlurV.getTexture(0), myFBO.getTexture(0), glm::vec3(0, 0, 0));
+    plane3->init();
+
 
     assert(glGetError() == GL_NO_ERROR);
     do{
-        glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         myFBO.enable();
 
@@ -293,12 +427,37 @@ int main(int argc, char **argv)
 
         myFBO.disable();
 
+
+        myFBO_BlurH.enable();
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        cube->draw();
+        plane1->draw();
+
+        myFBO_BlurH.disable();
+
+
+
+        myFBO_BlurV.enable();
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        plane2->draw();
+
+        myFBO_BlurV.disable();
+
+
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        plane3->draw();
 
         // Swap buffers
         glfwSwapBuffers(window);

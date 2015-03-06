@@ -10,155 +10,102 @@
 Image::Image(){}
 Image::Image(std::string _path): path(_path){}
 
-int Image::loadBMP(){
-
-    printf("Reading image %s\n", path.c_str());
-
-    // Data read from the header of the BMP file
-    unsigned char header[54];
-    unsigned int dataPos;
-    unsigned int imageSize;
-
-    // Open the file
-    FILE * file = fopen(path.c_str(), "rb");
-    if (!file){ 
-        printf("%s could not be opened. Are you in the right directory ? Don't forget to read the FAQ !\n", path.c_str()); 
-        getchar();
-        return -1; 
-    }
-
-    // Read the header, i.e. the 54 first bytes
-
-    // If less than 54 bytes are read, problem
-    if (fread(header, 1, 54, file) != 54){
-        printf("Not a correct BMP file\n");
-        return -1;
-    }
-    // A BMP files always begins with "BM"
-    if (header[0] != 'B' || header[1] != 'M'){
-        printf("Not a correct BMP file\n");
-        return -1;
-    }
-    // Make sure this is a 24bpp file
-    if (*(int*)&(header[0x1E]) != 0)         { printf("Not a correct BMP file\n");    return -1; }
-    if (*(int*)&(header[0x1C]) != 24)         { printf("Not a correct BMP file\n");    return -1; }
-
-    // Read the information about the image
-    dataPos = *(int*)&(header[0x0A]);
-    imageSize = *(int*)&(header[0x22]);
-    width = *(int*)&(header[0x12]);
-    height = *(int*)&(header[0x16]);
-
-    // Some BMP files are misformatted, guess missing information
-    if (imageSize == 0)    imageSize = width*height * 3; // 3 : one byte for each Red, Green and Blue component
-    if (dataPos == 0)      dataPos = 54; // The BMP header is done that way
-
-    // Create a buffer
-    pixels = new unsigned char[imageSize];
-
-    // Read the actual data from the file into the buffer
-    fread(pixels, 1, imageSize, file);
-
-    // Everything is in memory now, the file wan be closed
-    fclose(file);
-
-    return 0;
-}
-
+/* BMP file loader loads a 24-bit bmp file only */
 
 /*
-#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
-#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
-#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
-
-GLuint loadDDS(const char * imagepath){
-
-    unsigned char header[124];
-
-    FILE *fp;
-
-    // try to open the file
-    fp = fopen(imagepath, "rb");
-    if (fp == NULL){
-        printf("%s could not be opened. Are you in the right directory ? Don't forget to read the FAQ !\n", imagepath); getchar();
-        return 0;
-    }
-
-    // verify the type of file
-    char filecode[4];
-    fread(filecode, 1, 4, fp);
-    if (strncmp(filecode, "DDS ", 4) != 0) {
-        fclose(fp);
-        return 0;
-    }
-
-    // get the surface desc
-    fread(&header, 124, 1, fp);
-
-    unsigned int height = *(unsigned int*)&(header[8]);
-    unsigned int width = *(unsigned int*)&(header[12]);
-    unsigned int linearSize = *(unsigned int*)&(header[16]);
-    unsigned int mipMapCount = *(unsigned int*)&(header[24]);
-    unsigned int fourCC = *(unsigned int*)&(header[80]);
-
-
-    unsigned char * buffer;
-    unsigned int bufsize;
-    // how big is it going to be including all mipmaps?
-    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
-    buffer = (unsigned char*)malloc(bufsize * sizeof(unsigned char));
-    fread(buffer, 1, bufsize, fp);
-    // close the file pointer
-    fclose(fp);
-
-    unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
-    unsigned int format;
-    switch (fourCC)
-    {
-    case FOURCC_DXT1:
-        format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-        break;
-    case FOURCC_DXT3:
-        format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-        break;
-    case FOURCC_DXT5:
-        format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-        break;
-    default:
-        free(buffer);
-        return 0;
-    }
-
-    // Create one OpenGL texture
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    // "Bind" the newly created texture : all future texture functions will modify this texture
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-    unsigned int offset = 0;
-
-    // load the mipmaps
-    for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
-    {
-        unsigned int size = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
-        glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
-            0, size, buffer + offset);
-
-        offset += size;
-        width /= 2;
-        height /= 2;
-
-        // Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
-        if (width < 1) width = 1;
-        if (height < 1) height = 1;
-
-    }
-
-    free(buffer);
-
-    return textureID;
-}
+* getint and getshort are help functions to load the bitmap byte by byte
 */
+static unsigned int getint(FILE *fp) {
+    int c, c1, c2, c3;
+
+    /*  get 4 bytes */
+    c = getc(fp);
+    c1 = getc(fp);
+    c2 = getc(fp);
+    c3 = getc(fp);
+
+    return ((unsigned int)c) +
+        (((unsigned int)c1) << 8) +
+        (((unsigned int)c2) << 16) +
+        (((unsigned int)c3) << 24);
+}
+
+static unsigned int getshort(FILE *fp){
+    int c, c1;
+
+    /* get 2 bytes*/
+    c = getc(fp);
+    c1 = getc(fp);
+
+    return ((unsigned int)c) + (((unsigned int)c1) << 8);
+}
+
+/*  quick and dirty bitmap loader...for 24 bit bitmaps with 1 plane only.  */
+
+int Image::loadBMP() {
+    FILE *file;
+    unsigned long size;                 /*  size of the image in bytes. */
+    unsigned long i;                    /*  standard counter. */
+    unsigned short int planes;          /*  number of planes in image (must be 1)  */
+    unsigned short int bpp;             /*  number of bits per pixel (must be 24) */
+    char temp;                          /*  used to convert bgr to rgb color. */
+
+    /*  make sure the file is there. */
+    if ((file = fopen(path.c_str(), "rb")) == NULL) {
+        printf("File Not Found : %s\n", path.c_str());
+        return 0;
+    }
+
+    /*  seek through the bmp header, up to the width height: */
+    fseek(file, 18, SEEK_CUR);
+
+    /*  No 100% errorchecking anymore!!! */
+
+    /*  read the width */    width = getint(file);
+
+    /*  read the height */
+    height = getint(file);
+
+    /*  calculate the size (assuming 24 bits or 3 bytes per pixel). */
+    size = width * height * 3;
+
+    /*  read the planes */
+    planes = getshort(file);
+    if (planes != 1) {
+        printf("Planes from %s is not 1: %u\n", path.c_str(), planes);
+        return 0;
+    }
+
+    /*  read the bpp */
+    bpp = getshort(file);
+    if (bpp != 24) {
+        printf("Bpp from %s is not 24: %u\n", path.c_str(), bpp);
+        return 0;
+    }
+
+    /*  seek past the rest of the bitmap header. */
+    fseek(file, 24, SEEK_CUR);
+
+    /*  read the data.  */
+    pixels = (char *)malloc(size);
+    if (pixels == NULL) {
+        printf("Error allocating memory for color-corrected image data");
+        return 0;
+    }
+
+    if ((i = fread(pixels, size, 1, file)) != 1) {
+        printf("Error reading image data from %s.\n", path.c_str());
+        return 0;
+    }
+
+    for (i = 0; i<size; i += 3) { /*  reverse all of the colors. (bgr -> rgb) */
+        temp = pixels[i];
+        pixels[i] = pixels[i + 2];
+        pixels[i + 2] = temp;
+    }
+
+    fclose(file); /* Close the file and release the filedes */
+
+    /*  we're done. */
+    return 1;
+}

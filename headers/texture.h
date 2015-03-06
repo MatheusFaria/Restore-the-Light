@@ -12,7 +12,6 @@ public:
     Texture(Image * _img);
 
     void load();
-    void generateEmpty();
     GLuint getTexture();
 
 private:

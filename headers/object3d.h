@@ -73,6 +73,8 @@ private:
 
     std::stack <glm::mat4> matrixStack;
     glm::mat4 modelTransform;
+
+    bool hasPosition, hasNormals, hasElements, hasTexture;
 };
 
 #endif

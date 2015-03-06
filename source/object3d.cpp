@@ -18,6 +18,10 @@ Object3D::Object3D(Mesh * _mesh, Shader * _shader) : mesh(_mesh), shader(_shader
     parent = NULL;
     matrixStack.push(glm::mat4(1.0f));
     modelTransform = glm::mat4(1.0f);
+    hasElements = false;
+    hasPosition = false;
+    hasNormals = false;
+    hasTexture = false;
 }
 
 void Object3D::addTransformation(glm::mat4 matrix) {
@@ -54,6 +58,7 @@ void Object3D::loadElementBuffer(std::vector<unsigned int> v){
 }
 
 void Object3D::loadElementBuffer(){
+    hasElements = true;
     loadElementBuffer(mesh->getIndices());
 }
 
@@ -62,14 +67,17 @@ GLuint Object3D::getElementBuffer(){
 }
 
 void Object3D::loadVertexBuffer(std::string bufferName){
+    hasPosition = true;
     loadArrayBuffer(bufferName, mesh->getVertices());
 }
 
 void Object3D::loadNormalBuffer(std::string bufferName){
+    hasNormals = true;
     loadArrayBuffer(bufferName, mesh->getNormals());
 }
 
 void Object3D::loadTextureBuffer(std::string bufferName){
+    hasTexture = true;
     loadArrayBuffer(bufferName, mesh->getTexCoords());
 }
 
@@ -132,12 +140,14 @@ void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
 void Object3D::bindModelMatrix(std::string handle){
     if (parent != NULL){
         bindUniformMatrix4f(shader->getHandle(handle), parent->getModelMatrix()*modelTransform);
-        bindUniformMatrix4f(shader->getHandle("uMV_IT"),
+        if (hasNormals)
+            bindUniformMatrix4f(shader->getHandle("uMV_IT"),
             glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*parent->getModelMatrix()*modelTransform)));
     }
     else{
         bindUniformMatrix4f(shader->getHandle(handle), modelTransform);
-        bindUniformMatrix4f(shader->getHandle("uMV_IT"),
+        if (hasNormals)
+            bindUniformMatrix4f(shader->getHandle("uMV_IT"),
             glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*modelTransform)));
     }
 }
@@ -157,16 +167,21 @@ void Object3D::draw(){
         bindViewMatrix("uViewMatrix");
         bindProjectionMatrix("uProjMatrix");
 
-        enableAttrArray3f("aPosition", "posBufObj");
-        enableAttrArray3f("aNormal", "norBufObj");
-        bindElements();
+        if (hasPosition)
+            enableAttrArray3f("aPosition", "posBufObj");
+        if (hasNormals)
+            enableAttrArray3f("aNormal", "norBufObj");
+        if (hasElements)
+            bindElements();
     }
 
     drawObject();
 
     if (shader){
-        disableAttrArray("aPosition");
-        disableAttrArray("aNormal");
+        if (hasPosition)
+            disableAttrArray("aPosition");
+        if (hasNormals)
+            disableAttrArray("aNormal");
 
         unbindAll();
     }

@@ -49,9 +49,7 @@ void main()
 	I +=  Ia + Ie;
 
 	vec4 tex = texture2D(uTextureID, texCoord);
-	tex.w = 1;
 
 	//gl_FragColor = tex + (vec4(I.xyz, 1.0) - vec4(1))*vec4(0, 0, 0, 1);
 	gl_FragData[0] = tex + (vec4(I.xyz, 1.0) - vec4(1))*vec4(0, 0, 0, 1);
-	//gl_FragColor = vec4(I.xyz, 1.0);
 }

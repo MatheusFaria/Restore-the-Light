@@ -1,5 +1,7 @@
 #include "texture.h"
 
+#include "load_manager.h"
+
 Texture::Texture() : Texture(NULL){}
 Texture::Texture(Image * _img) : img(_img){}
 
@@ -21,20 +23,6 @@ void Texture::load(){
     glBindTexture(GL_TEXTURE_2D, NULL);
 }
 
-
-void Texture::generateEmpty(){
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 512, 512, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glBindTexture(GL_TEXTURE_2D, NULL);
-}
-
 GLuint Texture::getTexture(){
     return texture;
 }
@@ -50,6 +38,10 @@ void TextureManager::addTexture(std::string name, Texture * tex){
 }
 
 Texture * TextureManager::getTexture(std::string name){
+    if (textures.find(name) == textures.end()){
+        addTexture(name, new Texture(LoadManager::getImage(name)));
+        textures[name]->load();
+    }
     return textures[name];
 }
 
