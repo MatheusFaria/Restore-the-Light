@@ -21,6 +21,7 @@
 #include "texture.h"
 #include "image.h"
 #include "fbo.h"
+#include "render.h"
 
 #define GAUSS_KERNEL_SIZE 35
 
@@ -414,9 +415,17 @@ int main(int argc, char **argv)
     plane3->init();
 
 
+    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 2, glm::vec4(0,0,0,1));
+    gBuffer->init();
+
+    vector<Object3D *> objs;
+    objs.push_back(ball);
+
     assert(glGetError() == GL_NO_ERROR);
     do{
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        gBuffer->pass(objs);
+        gBuffer->displayTexture(0, 1);
+        /*glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         myFBO.enable();
 
@@ -457,7 +466,7 @@ int main(int argc, char **argv)
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        plane3->draw();
+        plane3->draw();*/
 
         // Swap buffers
         glfwSwapBuffers(window);

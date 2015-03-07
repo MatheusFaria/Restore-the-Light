@@ -5,12 +5,12 @@
 FBO::FBO(){
 }
 
-FBO::FBO(int _width, int _height, int _layers, bool _depth): 
-layersSize(_layers), depth(_depth), width(_width), height(_height){
+FBO::FBO(int _width, int _height, int _nTextures, bool _depth) :
+nTextures(_nTextures), depth(_depth), width(_width), height(_height){
 }
 
 void FBO::init(){
-    textures = new GLuint[layersSize];
+    textures = new GLuint[nTextures];
 
     glGenFramebuffers(1, &id); // Create Framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, id); // Bind framebuffer for drawing
@@ -19,7 +19,7 @@ void FBO::init(){
         std::cout << "Could not create FBO" << std::endl;
     }
 
-    for (int i = 0; i < layersSize; i++){
+    for (int i = 0; i < nTextures; i++){
         addLayer(i);
     }
 
@@ -27,12 +27,12 @@ void FBO::init(){
         createDepth();
     }
 
-    GLenum * attchs = new GLenum[layersSize];
-    for (int i = 0; i < layersSize; i++){
+    GLenum * attchs = new GLenum[nTextures];
+    for (int i = 0; i < nTextures; i++){
         attchs[i] = GL_COLOR_ATTACHMENT0 + i;
     }
 
-    glDrawBuffers(layersSize, attchs);
+    glDrawBuffers(nTextures, attchs);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -71,7 +71,7 @@ void FBO::createDepth(){
 }
 
 GLuint FBO::getTexture(int texID){
-    if (texID >= layersSize || texID < 0){
+    if (texID >= nTextures || texID < 0){
         std::cout << "Inexisting Layer " << texID << std::endl;
         return -1;
     }

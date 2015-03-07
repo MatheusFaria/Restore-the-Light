@@ -6,7 +6,7 @@
 class FBO{
 public:
     FBO();
-    FBO(int _width, int _height, int _layers, bool _depth);
+    FBO(int _width, int _height, int _nTextures, bool _depth);
 
     void init();
 
@@ -18,12 +18,10 @@ public:
     void printInfo();
 
 private:
-    int layersSize, 
-        width, height;
+    int nTextures, width, height;
     bool depth;
 
     GLuint id, * textures, depthBuf;
-
 
     int addLayer(int layerID);
     void createDepth();
