@@ -63,9 +63,6 @@ public:
             CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::SILVER, shader);
         
@@ -157,9 +154,6 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
@@ -199,9 +193,6 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();
@@ -236,9 +227,6 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::OBSIDIAN, shader);
         glm::vec3 pos = gameMap->getCubePos(currentCube);
@@ -388,9 +376,6 @@ public:
         glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
 
         Material::SetMaterial(Material::EMERALD, shader);
         loadIdentity();

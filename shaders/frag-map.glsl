@@ -6,6 +6,8 @@ uniform sampler2D uAlphaTexID;
 uniform int uCompleteGlow;
 
 varying vec2 vTexCoord;
+varying vec3 vVertexPos;
+varying vec3 vNormal;
 
 vec3 grayScale(vec3 pixel){
 	/*
@@ -32,6 +34,13 @@ vec3 alphaMap(vec3 pixel){
 
 void main()
 {
+	/*
+	Output:
+	0 : Texture (Diffuse Color)
+	1 : Alpha map
+	2 : Position
+	3 : Normals
+	*/
 	vec4 texel = texture2D(uTexID, vTexCoord);
 	vec4 alphaTexel = texture2D(uAlphaTexID, vTexCoord);
 
@@ -41,4 +50,7 @@ void main()
 		gl_FragData[1] = texel;
 	else
 		gl_FragData[1] = texel*alphaTexel;
+
+	gl_FragData[2] = vec4(vVertexPos, 1);
+	gl_FragData[3] = vec4(normalize(vNormal), 1);
 }

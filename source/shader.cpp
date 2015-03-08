@@ -9,6 +9,7 @@
 #include <cctype>
 
 #include "log.h"
+#include <iostream>
 
 
 Shader::Shader(){}
@@ -65,6 +66,7 @@ void Shader::load()
     glShaderSource(FS, 1, &fshader, NULL);
 
     // Compile vertex shader
+    std::cout << vertexShader << "\n";
     Log::out("Vertex ");
     glCompileShader(VS);
     GLSL::printError();
@@ -76,6 +78,7 @@ void Shader::load()
     }
 
     // Compile fragment shader
+    std::cout << fragmentShader << "\n";
     Log::out("Fragment ");
     glCompileShader(FS);
     GLSL::printError();

@@ -141,13 +141,13 @@ void Object3D::bindModelMatrix(std::string handle){
     if (parent != NULL){
         bindUniformMatrix4f(shader->getHandle(handle), parent->getModelMatrix()*modelTransform);
         if (hasNormals)
-            bindUniformMatrix4f(shader->getHandle("uMV_IT"),
+            bindUniformMatrix4f(shader->getHandle("uNormalMatrix"),
             glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*parent->getModelMatrix()*modelTransform)));
     }
     else{
         bindUniformMatrix4f(shader->getHandle(handle), modelTransform);
         if (hasNormals)
-            bindUniformMatrix4f(shader->getHandle("uMV_IT"),
+            bindUniformMatrix4f(shader->getHandle("uNormalMatrix"),
             glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*modelTransform)));
     }
 }

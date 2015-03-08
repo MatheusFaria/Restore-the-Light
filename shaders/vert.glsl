@@ -11,7 +11,7 @@ uniform vec4 uLightPos[LIGHTS_NUMBER];
 uniform mat4 uProjMatrix;
 uniform mat4 uViewMatrix;
 uniform mat4 uModelMatrix;
-uniform mat4 uMV_IT;
+uniform mat4 uNormalMatrix;
 uniform vec3 uEye;
 
 varying vec2 texCoord;
@@ -23,7 +23,7 @@ varying float d[LIGHTS_NUMBER];
 void main()
 {
 	vec3 vertexPos = vec3(uViewMatrix * uModelMatrix * aPosition);
-	normalVec = normalize(vec3(uMV_IT*vec4(aNormal, 0)));
+	normalVec = normalize(vec3(uNormalMatrix*vec4(aNormal, 0)));
 	vec3 eye = uEye;
 
 	for(int i = 0; i < LIGHTS_NUMBER; i++){

@@ -2,7 +2,10 @@
 
 #include <iostream>
 
+#include "glm/gtc/type_ptr.hpp"
+
 #include "load_manager.h"
+#include "virtual_camera.h"
 
 namespace Render{
     Processor::Processor(){}
@@ -57,6 +60,8 @@ namespace Render{
             return;
         }
 
+        glViewport(0, 0, width, height);
+
         glUseProgram(shader->getId());
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
@@ -108,6 +113,7 @@ namespace Render{
     Processor(_width, _height, _nTextures, true, 1, _refreshColor){}
 
     void GeometryProcessor::pass(std::vector<Object3D *> objects){
+        glViewport(0, 0, width, height);
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
         fbos[0]->enable();
@@ -122,6 +128,88 @@ namespace Render{
     }
 
 
+
+
+    LightProcessor::LightProcessor(){}
+    LightProcessor::LightProcessor(int _width, int _height, int _nTextures) :
+        Processor(_width, _height, _nTextures, false, 1, glm::vec4(0,0,0,1)){}
+
+    void LightProcessor::init(){
+        Processor::init();
+
+        lightShader = LoadManager::getShader("default-texture-vertex.glsl", 
+                                             "default-lighting-fragment.glsl");
+        lightShader->loadHandle("aPosition");
+        lightShader->loadHandle("uDiffuseID");
+        lightShader->loadHandle("uPositionID");
+        lightShader->loadHandle("uNormalID");
+        lightShader->loadHandle("uViewMatrix");
+        lightShader->loadHandle("uEye");
+        lightShader->loadHandle("uLightPos");
+        lightShader->loadHandle("uLightFallOff");
+        lightShader->loadHandle("uLightColor");
+    }
+
+    void LightProcessor::pass(Processor * processor, std::list<Light *> lights){
+        glViewport(0, 0, width, height);
+        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+
+        //glEnable(GL_BLEND);
+        //glBlendEquation(GL_FUNC_ADD);
+        //glBlendFunc(GL_ONE, GL_ONE);
+
+        fbos[0]->enable();
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(lightShader->getId());
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(lightShader->getHandle("aPosition"));
+        glVertexAttribPointer(lightShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+        glUniform3f(lightShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glUniformMatrix4fv(lightShader->getHandle("uViewMatrix"), 1, GL_FALSE,
+            glm::value_ptr(CamManager::currentCam()->getViewMatrix()));
+
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+            (*it)->load(lightShader->getHandle("uLightPos"),
+                        lightShader->getHandle("uLightColor"),
+                        lightShader->getHandle("uLightFallOff"));
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+            glUniform1i(lightShader->getHandle("uDiffuseID"), 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+            glUniform1i(lightShader->getHandle("uPositionID"), 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+            glUniform1i(lightShader->getHandle("uNormalID"), 2);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+        fbos[0]->disable();
+        
+        glDisableVertexAttribArray(lightShader->getHandle("aPosition"));
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glUseProgram(0);
+    }
+
+
+
+
+
     PostProcessor::PostProcessor(){}
     PostProcessor::PostProcessor(int _width, int _height, int _nTextures, int _nFBOs):
         Processor(_width, _height, _nTextures, false, _nFBOs, glm::vec4(0, 0, 0, 1)){}
@@ -132,6 +220,7 @@ namespace Render{
             return;
         }
 
+        glViewport(0, 0, width, height);
         glUseProgram(blurShader->getId());
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
@@ -167,14 +256,16 @@ namespace Render{
 
         glDisableVertexAttribArray(blurShader->getHandle("aPosition"));
 
-        //glBindTexture(GL_TEXTURE_2D, 0);
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        //glUseProgram(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glUseProgram(0);
     }
 
 
     void PostProcessor::passBloom(Processor * processor, Shader * bloomShader, Shader * blurShader, int cycles){
         passBlur(processor, cycles, blurShader);
+
+        glViewport(0, 0, width, height);
 
         glUseProgram(bloomShader->getId());
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);

@@ -67,7 +67,7 @@ public:
         loadIdentity();
 
         rot += 0.5f;
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
+        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -1)));
         addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
         bindModelMatrix("uModelMatrix");
 
@@ -77,11 +77,70 @@ public:
     Texture * tex, * atex;
 };
 
+class Item : public Object3D{
+public:
+    Item() {}
+
+    void init(){
+        mesh = LoadManager::getMesh("sphere-tex.obj");
+
+        loadVertexBuffer("posBufObj");
+        loadNormalBuffer("norBufObj");
+        loadTextureBuffer("texBufObj");
+        loadElementBuffer();
+
+        shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
+
+        tex = TextureManager::getTexture("red-gray.bmp");
+        atex = TextureManager::getTexture("red-gray-alpha.bmp");
+
+        rotAxe = 0;
+    }
+
+    void drawObject(){
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex->getTexture());
+        glUniform1i(shader->getHandle("uTexID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, atex->getTexture());
+        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
+
+        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
+
+        loadIdentity();
+
+        glm::vec3 pos = glm::vec3(0, 0, -1);
+
+        rotAxe += 0.05;
+        addTransformation(glm::translate(glm::mat4(1.0f), pos));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rotAxe, glm::vec3(0, 1, 0)));
+        addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.6)));
+        bindModelMatrix("uModelMatrix");
+
+        drawElements();
+    }
+
+    float rotAxe;
+    Texture * tex, *atex;
+};
+
+Light * light;
+int hot_key = 0;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    //Move light in X axis
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
         g_lock_mouse = !g_lock_mouse;
+
+    if (key == GLFW_KEY_X && action == GLFW_PRESS)
+        hot_key = (hot_key + 1) % 4;
+
+    if (key == GLFW_KEY_A && action == GLFW_PRESS)
+        light->pos.x -= 0.1;
+    else if (key == GLFW_KEY_D && action == GLFW_PRESS)
+        light->pos.x += 0.1;
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
@@ -127,17 +186,9 @@ void setupCams(){
 }
 
 void setupLights(){
-    LightManager::init();
-    LightManager::addLight(new Light(glm::vec3(0, 2, 0), glm::vec3(1, 1, 1), 
-        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 0);
-    LightManager::addLight(new Light(glm::vec3(-50, 2, 0), glm::vec3(0, 1, 0),
-        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 1);
-    LightManager::addLight(new Light(glm::vec3(-50, 2, -50), glm::vec3(0, 0, 1),
-        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 2);
-    LightManager::addLight(new Light(glm::vec3(0, 2, -50), glm::vec3(1, 1, 0),
-        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 3);
-    LightManager::addLight(new Light(glm::vec3(-25, 2, -25), glm::vec3(1),
-        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT), 4);
+    light = new Light(glm::vec3(0, 0, 0), glm::vec3(1, 1, 1),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT);
+    LightManager::addLight(light);
 }
 
 void installShaders(){
@@ -155,7 +206,7 @@ void installShaders(){
     shader->loadHandle("UeColor");
     shader->loadHandle("Ushine");
     shader->loadHandle("uEye");
-    shader->loadHandle("uMV_IT"); 
+    shader->loadHandle("uNormalMatrix"); 
 
     shader->loadHandle("uLightPos");
     shader->loadHandle("uLightFallOff");
@@ -164,11 +215,14 @@ void installShaders(){
     shader->loadHandle("uTextureID");
     shader->loadHandle("aTexCoord");
 
-    shader = LoadManager::getShader("vert-tex.glsl", "frag-map.glsl");
+    shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
     shader->loadHandle("aPosition");
+    shader->loadHandle("aNormal");
+
     shader->loadHandle("uProjMatrix");
     shader->loadHandle("uViewMatrix");
     shader->loadHandle("uModelMatrix");
+    shader->loadHandle("uNormalMatrix");
     
     shader->loadHandle("uTexID");
     shader->loadHandle("aTexCoord");
@@ -294,26 +348,36 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
-    Ball * ball = new Ball();
-    ball->init();
+    //Ball * ball = new Ball();
+    //ball->init();
 
-    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width/2, g_height/2, 2, glm::vec4(0,0,0,1));
+    Item * item = new Item();
+    item->init();
+    
+    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 4, glm::vec4(0,0,0,1));
     gBuffer->init();
 
     vector<Object3D *> objs;
-    objs.push_back(ball);
+    objs.push_back(item);
 
     Render::PostProcessor * blurPost = new Render::PostProcessor(g_width, g_height, 1, 2);
     blurPost->init();
 
-    Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
+    Render::LightProcessor * lProcessor = new Render::LightProcessor(g_width, g_height, 1);
+    lProcessor->init();
 
+    Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
     Shader * bloomshader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
-    
+   
+
     assert(glGetError() == GL_NO_ERROR);
     do{
         gBuffer->pass(objs);
-        gBuffer->displayTexture(0);
+        //gBuffer->displayTexture(hot_key);
+
+        lProcessor->pass(gBuffer, LightManager::getLights());
+        lProcessor->displayTexture(0);
+
         //blurPost->passBloom(gBuffer, bloomshader, shader, 1);
         //blurPost->displayTexture(0);
 

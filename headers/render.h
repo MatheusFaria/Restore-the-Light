@@ -2,6 +2,7 @@
 #define __RENDER_H__
 
 #include <vector>
+#include <list>
 
 #include "glm/glm.hpp"
 #include "GLIncludes.h"
@@ -9,6 +10,7 @@
 #include "fbo.h"
 #include "object3d.h"
 #include "shader.h"
+#include "light.h"
 
 namespace Render{
     class Processor{
@@ -44,6 +46,17 @@ namespace Render{
         GeometryProcessor(int _width, int _height, int _nTextures, glm::vec4 _refreshColor);
 
         void pass(std::vector<Object3D *> objects);
+    };
+
+    class LightProcessor : public Processor{
+    public:
+        LightProcessor();
+        LightProcessor(int _width, int _height, int _nTextures);
+
+        void init();
+        void pass(Processor * processor, std::list<Light *> lights);
+    private:
+        Shader * lightShader;
     };
 
     class PostProcessor : public Processor{

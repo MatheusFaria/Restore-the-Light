@@ -9,6 +9,7 @@ uniform vec3 UeColor;
 uniform float Ushine;
 
 uniform sampler2D uTextureID;
+uniform vec3 uEye;
 
 uniform vec3 uLightFallOff[LIGHTS_NUMBER];
 uniform vec3 uLightColor[LIGHTS_NUMBER];
