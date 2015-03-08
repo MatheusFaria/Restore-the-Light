@@ -66,7 +66,7 @@ public:
 
         loadIdentity();
 
-        //rot += 0.05f;
+        rot += 0.5f;
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
         addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
         bindModelMatrix("uModelMatrix");
@@ -75,82 +75,6 @@ public:
     }
     float rot = 45;
     Texture * tex, * atex;
-};
-
-class Plane : public Object3D{
-public:
-    Plane(GLuint _blur, GLuint _tex, glm::vec3 _trans) 
-        : blur(_blur), tex(_tex), trans(_trans){}
-
-    void init(){
-        mesh = LoadManager::getMesh("plane.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadTextureBuffer("texBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert-tex.glsl", "frag-glow.glsl");
-    }
-
-    void drawObject(){
-        enableAttrArray2f("aTexCoord", "texBufObj");
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glUniform1i(shader->getHandle("uTexID"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, blur);
-        glUniform1i(shader->getHandle("uGlowTexID"), 1);
-
-        loadIdentity();
-
-        addTransformation(glm::translate(glm::mat4(1.0f), trans));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-    GLuint tex, blur;
-    glm::vec3 trans;
-    bool h;
-};
-
-class PlaneBlur : public Object3D{
-public:
-    PlaneBlur(GLuint _tex, glm::vec3 _trans, bool _h) : tex(_tex), trans(_trans), h(_h){}
-
-    void init(){
-        mesh = LoadManager::getMesh("plane.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadTextureBuffer("texBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert-tex.glsl", "temp.glsl");
-    }
-
-    void drawObject(){
-        enableAttrArray2f("aTexCoord", "texBufObj");
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glUniform1i(shader->getHandle("uTexID"), 0);
-
-        if (h)
-            glUniform2f(shader->getHandle("uDir"), 1, 0);
-        else
-            glUniform2f(shader->getHandle("uDir"), 0, 1);
-
-        loadIdentity();
-
-        addTransformation(glm::translate(glm::mat4(1.0f), trans));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-    GLuint tex;
-    glm::vec3 trans;
-    bool h;
 };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -253,36 +177,15 @@ void installShaders(){
 
     shader->loadHandle("uCompleteGlow");
 
-    shader = LoadManager::getShader("vert-tex.glsl", "frag-glow.glsl");
+    shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
     shader->loadHandle("aPosition");
-    shader->loadHandle("uProjMatrix");
-    shader->loadHandle("uViewMatrix");
-    shader->loadHandle("uModelMatrix");
-
     shader->loadHandle("uTexID");
-    shader->loadHandle("aTexCoord");
-
-    shader->loadHandle("uGlowTexID");
-
-
-    shader = LoadManager::getShader("vert-tex.glsl", "temp.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uProjMatrix");
-    shader->loadHandle("uViewMatrix");
-    shader->loadHandle("uModelMatrix");
-
-    shader->loadHandle("uTexID");
-    shader->loadHandle("aTexCoord");
     shader->loadHandle("uDir");
 
-    shader = LoadManager::getShader("vert-tex.glsl", "frag-tex.glsl");
+    shader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
     shader->loadHandle("aPosition");
-    shader->loadHandle("uProjMatrix");
-    shader->loadHandle("uViewMatrix");
-    shader->loadHandle("uModelMatrix");
-
     shader->loadHandle("uTexID");
-    shader->loadHandle("aTexCoord");
+    shader->loadHandle("uBlurTexID");
 }
 
 void installMeshes(){
@@ -324,7 +227,7 @@ void createGaussBlurShader(){
 
         "void main()" << eol <<
         "{" << eol <<
-        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 3, uDir), 1);" << eol <<
+        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 2, uDir), 1);" << eol <<
         "}" << eol;
 
     ofstream file;
@@ -391,82 +294,28 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
-    //createFrameBuffers();
-
-    FBO myFBO = FBO(g_width, g_height, 2, true);
-    myFBO.init();
-
-    FBO myFBO_BlurH = FBO(g_width, g_height, 1, true);
-    myFBO_BlurH.init();
-
-    FBO myFBO_BlurV = FBO(g_width, g_height, 1, true);
-    myFBO_BlurV.init();
-
     Ball * ball = new Ball();
     ball->init();
 
-    PlaneBlur * plane1 = new PlaneBlur(myFBO.getTexture(1), glm::vec3(0, 0, 0), true);
-    plane1->init();
-
-    PlaneBlur * plane2 = new PlaneBlur(myFBO_BlurH.getTexture(0), glm::vec3(0, 0, 0), false);
-    plane2->init();
-
-    Plane * plane3 = new Plane(myFBO_BlurV.getTexture(0), myFBO.getTexture(0), glm::vec3(0, 0, 0));
-    plane3->init();
-
-
-    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 2, glm::vec4(0,0,0,1));
+    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width/2, g_height/2, 2, glm::vec4(0,0,0,1));
     gBuffer->init();
 
     vector<Object3D *> objs;
     objs.push_back(ball);
 
+    Render::PostProcessor * blurPost = new Render::PostProcessor(g_width, g_height, 1, 2);
+    blurPost->init();
+
+    Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
+
+    Shader * bloomshader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
+    
     assert(glGetError() == GL_NO_ERROR);
     do{
         gBuffer->pass(objs);
-        gBuffer->displayTexture(0, 1);
-        /*glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        myFBO.enable();
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        ball->draw();
-
-        myFBO.disable();
-
-
-        myFBO_BlurH.enable();
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        plane1->draw();
-
-        myFBO_BlurH.disable();
-
-
-
-        myFBO_BlurV.enable();
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        plane2->draw();
-
-        myFBO_BlurV.disable();
-
-
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        plane3->draw();*/
+        gBuffer->displayTexture(0);
+        //blurPost->passBloom(gBuffer, bloomshader, shader, 1);
+        //blurPost->displayTexture(0);
 
         // Swap buffers
         glfwSwapBuffers(window);

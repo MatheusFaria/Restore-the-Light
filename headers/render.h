@@ -4,9 +4,11 @@
 #include <vector>
 
 #include "glm/glm.hpp"
+#include "GLIncludes.h"
 
 #include "fbo.h"
 #include "object3d.h"
+#include "shader.h"
 
 namespace Render{
     class Processor{
@@ -16,13 +18,24 @@ namespace Render{
 
         void init();
 
-        void displayTexture(int fboID, int texID);
+        void displayTextures(std::vector<int> texIDs);
+        void displayTexture(int texID);
+
+        bool hasOutput();
+        FBO * getOutFBO();
 
     protected:
         std::vector<FBO *> fbos;
+        FBO * outFBO;
         glm::vec4 refreshColor;
         int width, height, nTextures, nFBOs;
         bool depth;
+        GLuint vertexBuf;
+
+    private:
+        Shader * shader;
+
+        void prepareDisplay();
     };
 
     class GeometryProcessor : public Processor{
@@ -31,11 +44,15 @@ namespace Render{
         GeometryProcessor(int _width, int _height, int _nTextures, glm::vec4 _refreshColor);
 
         void pass(std::vector<Object3D *> objects);
+    };
 
-    private:
-        FBO * gBuffer;
-        glm::vec4 refreshColor;
-        int width, height, nTextures;
+    class PostProcessor : public Processor{
+    public:
+        PostProcessor();
+        PostProcessor(int _width, int _height, int _nTextures, int _nFBOs);
+
+        void passBlur(Processor * processor, int cycles, Shader * blurShader);
+        void passBloom(Processor * processor, Shader * bloomShader, Shader * blurShader, int cycles);
     };
 }
 
