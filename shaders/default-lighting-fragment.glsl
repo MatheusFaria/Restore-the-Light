@@ -3,6 +3,8 @@
 uniform sampler2D uDiffuseID;
 uniform sampler2D uPositionID;
 uniform sampler2D uNormalID;
+uniform sampler2D uSpecularID;
+uniform sampler2D uAmbientID;
 
 uniform mat4 uViewMatrix;
 uniform vec3 uEye;
@@ -15,18 +17,19 @@ varying vec2 vTexCoord;
 
 void main()
 {
+	vec4 specularParams = texture2D(uSpecularID, vTexCoord);
+
 	vec3 light = vec3(uViewMatrix * vec4(uLightPos.xyz, 1));
 	vec3 vertexPos = vec3(texture2D(uPositionID, vTexCoord));
 	vec3 normalVec = vec3(texture2D(uNormalID, vTexCoord));
 	vec3 N = normalize(normalVec);
 	
-	vec3 kd = vec3(0.91, 0.782, 0.82);//vec3(texture2D(uDiffuseID, vTexCoord));
-	vec3 Ia = vec3(1, 0, 0);//UaColor;
-	vec3 Ie = vec3(0, 0, 0);//UeColor;
-	vec3 ks = vec3(1.0, 0.913, 0.8);//UsColor;
-	float n = 200.0;//Ushine;
+	vec3 kd = vec3(texture2D(uDiffuseID, vTexCoord));
+	vec3 Ia_Ie = vec3(texture2D(uAmbientID, vTexCoord));
+	vec3 ks = specularParams.rgb;
+	float n = specularParams.a;
 
-	float d = length(light);
+	float d = length(light - vertexPos);
 
 	vec3 L = normalize(light - vertexPos);
 	vec3 V = normalize(uEye - vertexPos);
@@ -41,8 +44,7 @@ void main()
 
 	//vec3 I = Ic*(Id + Is)/(a + b*d + c*d*d);
 	vec3 I;
-	I = Ic*(Id + Is);
-	//I +=  Ia + Ie;
+	I = Ic*(Id + Is) + Ia_Ie;
 
 	gl_FragData[0] = vec4(I, 1);
 }

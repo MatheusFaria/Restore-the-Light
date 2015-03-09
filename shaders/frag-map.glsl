@@ -5,6 +5,12 @@ uniform sampler2D uAlphaTexID;
 
 uniform int uCompleteGlow;
 
+uniform vec3 UdColor;
+uniform vec3 UaColor;
+uniform vec3 UsColor;
+uniform vec3 UeColor;
+uniform float Ushine;
+
 varying vec2 vTexCoord;
 varying vec3 vVertexPos;
 varying vec3 vNormal;
@@ -36,10 +42,12 @@ void main()
 {
 	/*
 	Output:
-	0 : Texture (Diffuse Color)
-	1 : Alpha map
-	2 : Position
-	3 : Normals
+	0 : Texture (Diffuse Color) (rgb)
+	1 : Alpha map (rgb)
+	2 : Position (xyz)
+	3 : Normals (xyz)
+	4 : Specular Parameters (ks.rgb, shinness power n)
+	5 : Ambient + Emission (rgb)
 	*/
 	vec4 texel = texture2D(uTexID, vTexCoord);
 	vec4 alphaTexel = texture2D(uAlphaTexID, vTexCoord);
@@ -53,4 +61,8 @@ void main()
 
 	gl_FragData[2] = vec4(vVertexPos, 1);
 	gl_FragData[3] = vec4(normalize(vNormal), 1);
+
+	gl_FragData[4] = vec4(UsColor, Ushine);
+
+	gl_FragData[5] = vec4(vec3(UaColor + UeColor), 1);
 }

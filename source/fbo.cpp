@@ -20,7 +20,7 @@ void FBO::init(){
     }
 
     for (int i = 0; i < nTextures; i++){
-        addLayer(i);
+        addTexture(i);
     }
 
     if (depth){
@@ -45,19 +45,19 @@ void FBO::init(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-int FBO::addLayer(int layerID){
-    glGenTextures(1, &textures[layerID]);
-    glBindTexture(GL_TEXTURE_2D, textures[layerID]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
+int FBO::addTexture(int textureID){
+    glGenTextures(1, &textures[textureID]);
+    glBindTexture(GL_TEXTURE_2D, textures[textureID]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + layerID, textures[layerID], 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + textureID, textures[textureID], 0);
 
-    return layerID;
+    return textureID;
 }
 
 void FBO::createDepth(){
@@ -72,7 +72,7 @@ void FBO::createDepth(){
 
 GLuint FBO::getTexture(int texID){
     if (texID >= nTextures || texID < 0){
-        std::cout << "Inexisting Layer " << texID << std::endl;
+        std::cout << "Inexisting Texture " << texID << std::endl;
         return -1;
     }
     return textures[texID];

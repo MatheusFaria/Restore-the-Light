@@ -113,6 +113,9 @@ namespace Render{
     Processor(_width, _height, _nTextures, true, 1, _refreshColor){}
 
     void GeometryProcessor::pass(std::vector<Object3D *> objects){
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+
         glViewport(0, 0, width, height);
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
@@ -143,6 +146,8 @@ namespace Render{
         lightShader->loadHandle("uDiffuseID");
         lightShader->loadHandle("uPositionID");
         lightShader->loadHandle("uNormalID");
+        lightShader->loadHandle("uSpecularID");
+        lightShader->loadHandle("uAmbientID");
         lightShader->loadHandle("uViewMatrix");
         lightShader->loadHandle("uEye");
         lightShader->loadHandle("uLightPos");
@@ -154,9 +159,11 @@ namespace Render{
         glViewport(0, 0, width, height);
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
-        //glEnable(GL_BLEND);
-        //glBlendEquation(GL_FUNC_ADD);
-        //glBlendFunc(GL_ONE, GL_ONE);
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
 
         fbos[0]->enable();
 
@@ -194,6 +201,14 @@ namespace Render{
             glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
             glUniform1i(lightShader->getHandle("uNormalID"), 2);
 
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+            glUniform1i(lightShader->getHandle("uSpecularID"), 3);
+
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
+            glUniform1i(lightShader->getHandle("uAmbientID"), 4);
+
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
@@ -219,6 +234,9 @@ namespace Render{
             std::cout << "There isn't FBOs enough\n";
             return;
         }
+
+        glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
 
         glViewport(0, 0, width, height);
         glUseProgram(blurShader->getId());
@@ -262,8 +280,9 @@ namespace Render{
     }
 
 
-    void PostProcessor::passBloom(Processor * processor, Shader * bloomShader, Shader * blurShader, int cycles){
-        passBlur(processor, cycles, blurShader);
+    void PostProcessor::passBloom(Processor * processorAlpha, Processor * processorDiffuse, 
+        Shader * bloomShader, Shader * blurShader, int cycles){
+        passBlur(processorAlpha, cycles, blurShader);
 
         glViewport(0, 0, width, height);
 
@@ -279,7 +298,7 @@ namespace Render{
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glBindTexture(GL_TEXTURE_2D, processorDiffuse->getOutFBO()->getTexture(0));
         glUniform1i(bloomShader->getHandle("uTexID"), 0);
 
         glActiveTexture(GL_TEXTURE1);

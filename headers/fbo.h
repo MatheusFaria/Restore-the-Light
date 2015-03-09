@@ -23,7 +23,7 @@ private:
 
     GLuint id, * textures, depthBuf;
 
-    int addLayer(int layerID);
+    int addTexture(int textureID);
     void createDepth();
 };
 

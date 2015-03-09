@@ -98,6 +98,9 @@ public:
     }
 
     void drawObject(){
+        Material::SetMaterial(Material::GOLD, shader);
+        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+
         enableAttrArray2f("aTexCoord", "texBufObj");
 
         glActiveTexture(GL_TEXTURE0);
@@ -114,7 +117,7 @@ public:
 
         glm::vec3 pos = glm::vec3(0, 0, -1);
 
-        rotAxe += 0.05;
+        rotAxe += 0.5;
         addTransformation(glm::translate(glm::mat4(1.0f), pos));
         addTransformation(glm::rotate(glm::mat4(1.0f), rotAxe, glm::vec3(0, 1, 0)));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.6)));
@@ -135,7 +138,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         g_lock_mouse = !g_lock_mouse;
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS)
-        hot_key = (hot_key + 1) % 4;
+        hot_key = (hot_key + 1) % 6;
 
     if (key == GLFW_KEY_A && action == GLFW_PRESS)
         light->pos.x -= 0.1;
@@ -186,9 +189,10 @@ void setupCams(){
 }
 
 void setupLights(){
-    light = new Light(glm::vec3(0, 0, 0), glm::vec3(1, 1, 1),
+    light = new Light(glm::vec3(-1, 0, 0), glm::vec3(1, 1, 1),
         glm::vec3(0, 0.03, 0), Light::POINT_LIGHT);
     LightManager::addLight(light);
+    LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(1,1,1), glm::vec3(1), Light::POINT_LIGHT));
 }
 
 void installShaders(){
@@ -223,6 +227,12 @@ void installShaders(){
     shader->loadHandle("uViewMatrix");
     shader->loadHandle("uModelMatrix");
     shader->loadHandle("uNormalMatrix");
+
+    shader->loadHandle("UaColor");
+    shader->loadHandle("UdColor");
+    shader->loadHandle("UsColor");
+    shader->loadHandle("UeColor");
+    shader->loadHandle("Ushine");
     
     shader->loadHandle("uTexID");
     shader->loadHandle("aTexCoord");
@@ -332,10 +342,10 @@ int main(int argc, char **argv)
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    glEnable(GL_BLEND);
+    //glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Set the background color
     glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
@@ -354,7 +364,7 @@ int main(int argc, char **argv)
     Item * item = new Item();
     item->init();
     
-    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 4, glm::vec4(0,0,0,1));
+    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 6, glm::vec4(0,0,0,1));
     gBuffer->init();
 
     vector<Object3D *> objs;
@@ -376,10 +386,10 @@ int main(int argc, char **argv)
         //gBuffer->displayTexture(hot_key);
 
         lProcessor->pass(gBuffer, LightManager::getLights());
-        lProcessor->displayTexture(0);
+        //lProcessor->displayTexture(0);
 
-        //blurPost->passBloom(gBuffer, bloomshader, shader, 1);
-        //blurPost->displayTexture(0);
+        blurPost->passBloom(gBuffer, lProcessor, bloomshader, shader, 2);
+        blurPost->displayTexture(0);
 
         // Swap buffers
         glfwSwapBuffers(window);
