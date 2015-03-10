@@ -23,6 +23,9 @@
 #include "fbo.h"
 #include "render.h"
 
+#include "scene.h"
+#include "hero.h"
+
 #define GAUSS_KERNEL_SIZE 35
 
 GLFWwindow* window;
@@ -32,7 +35,11 @@ int g_width;
 int g_height;
 bool g_lock_mouse = true;
 bool g_first_mouse_movement = true;
+int hot_key = 0;
 
+Hero * hero;
+
+/*
 class Ball : public Object3D{
 public:
     Ball(){}
@@ -129,9 +136,9 @@ public:
     float rotAxe;
     Texture * tex, *atex;
 };
+*/
 
-Light * light;
-int hot_key = 0;
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
@@ -139,16 +146,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS)
         hot_key = (hot_key + 1) % 6;
-
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-        light->pos.x -= 0.1;
-    else if (key == GLFW_KEY_D && action == GLFW_PRESS)
-        light->pos.x += 0.1;
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    /*if (hero){
+    if (hero){
         if (hero->isFPS()){
             if (g_first_mouse_movement){
                 g_first_mouse_movement = false;
@@ -172,7 +174,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
                 glfwSetCursorPos(window, g_width / 2, g_height / 2);
             }
         }
-    }*/
+    }
 }
 
 void setupCams(){
@@ -189,10 +191,16 @@ void setupCams(){
 }
 
 void setupLights(){
-    light = new Light(glm::vec3(-1, 0, 0), glm::vec3(1, 1, 1),
-        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT);
-    LightManager::addLight(light);
-    LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(1,1,1), glm::vec3(1), Light::POINT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(0, 3, 0), glm::vec3(1, 0, 0),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(-50, 3, 0), glm::vec3(0, 1, 0),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(0, 3, -50), glm::vec3(0, 0, 1),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(-50, 3, -50), glm::vec3(1, 1, 0),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(-25, 3, -25), glm::vec3(1, 1, 1),
+        glm::vec3(0, 0.03, 0), Light::POINT_LIGHT));
 }
 
 void installShaders(){
@@ -240,6 +248,7 @@ void installShaders(){
     shader->loadHandle("uAlphaTexID");
 
     shader->loadHandle("uCompleteGlow");
+    shader->loadHandle("uApplyTexture");
 
     shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
     shader->loadHandle("aPosition");
@@ -342,10 +351,7 @@ int main(int argc, char **argv)
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    //glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Set the background color
     glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
@@ -358,17 +364,20 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
-    //Ball * ball = new Ball();
-    //ball->init();
+    int rows = 25, cols = 25;
 
-    Item * item = new Item();
-    item->init();
+    GameMap * gamemap = new GameMap(string(rows*cols, 'c'), rows, cols);
+    gamemap->init();
+
+    hero = new Hero(gamemap, 0);
+    hero->init();
+    gamemap->addChild(hero);
     
     Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 6, glm::vec4(0,0,0,1));
     gBuffer->init();
 
     vector<Object3D *> objs;
-    objs.push_back(item);
+    objs.push_back(gamemap);
 
     Render::PostProcessor * blurPost = new Render::PostProcessor(g_width, g_height, 1, 2);
     blurPost->init();
@@ -382,6 +391,8 @@ int main(int argc, char **argv)
 
     assert(glGetError() == GL_NO_ERROR);
     do{
+        hero->checkInput(window);
+
         gBuffer->pass(objs);
         //gBuffer->displayTexture(hot_key);
 

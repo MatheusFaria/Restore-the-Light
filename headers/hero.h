@@ -24,13 +24,14 @@ public:
     }
 
     void init(){
-        mesh = LoadManager::getMesh("sphere.obj");
+        mesh = LoadManager::getMesh("sphere-tex.obj");
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
+        loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+        shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
 
         pos = gameMap->getCubePos(currentCube);
         pos.y += 2;
@@ -40,15 +41,14 @@ public:
     }
 
     void drawObject(){
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-        LightManager::loadLights(shader->getHandle("uLightPos"),
-            shader->getHandle("uLightColor"),
-            shader->getHandle("uLightFallOff"));
-
         Material::SetMaterial(Material::GOLD, shader);
+        glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
+
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
+        glUniform1i(shader->getHandle("uApplyTexture"), 0);
+
         loadIdentity();
 
         addTransformation(glm::translate(glm::mat4(1.0f), pos));

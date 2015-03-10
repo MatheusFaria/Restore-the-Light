@@ -1,4 +1,9 @@
 #version 120
+    
+#define UNDEFINED   -1
+#define DIRECTIONAL  0
+#define POINT_LIGHT  1
+#define SPOT_LIGHT   2
 
 uniform sampler2D uDiffuseID;
 uniform sampler2D uPositionID;
@@ -20,6 +25,8 @@ void main()
 	vec4 specularParams = texture2D(uSpecularID, vTexCoord);
 
 	vec3 light = vec3(uViewMatrix * vec4(uLightPos.xyz, 1));
+	float lightType = uLightPos.w;
+
 	vec3 vertexPos = vec3(texture2D(uPositionID, vTexCoord));
 	vec3 normalVec = vec3(texture2D(uNormalID, vTexCoord));
 	vec3 N = normalize(normalVec);
@@ -29,9 +36,14 @@ void main()
 	vec3 ks = specularParams.rgb;
 	float n = specularParams.a;
 
-	float d = length(light - vertexPos);
+	float d = distance(light, vertexPos);
 
-	vec3 L = normalize(light - vertexPos);
+	vec3 L;
+	if(lightType == DIRECTIONAL)
+		L = normalize(light);
+	else
+		L = normalize(light - vertexPos);
+
 	vec3 V = normalize(uEye - vertexPos);
 		
 	vec3 H = normalize(L + V);
@@ -42,9 +54,11 @@ void main()
 	float a = uLightFallOff.x, b = uLightFallOff.y, c = uLightFallOff.z;
 	vec3 Ic = uLightColor;
 
-	//vec3 I = Ic*(Id + Is)/(a + b*d + c*d*d);
 	vec3 I;
-	I = Ic*(Id + Is) + Ia_Ie;
+	if(lightType == DIRECTIONAL)
+		I = Ic*(Id + Is);
+	else
+		I = Ic*(Id + Is)/(a + b*d + c*d*d);
 
 	gl_FragData[0] = vec4(I, 1);
 }

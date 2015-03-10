@@ -4,6 +4,7 @@ uniform sampler2D uTexID;
 uniform sampler2D uAlphaTexID;
 
 uniform int uCompleteGlow;
+uniform int uApplyTexture;
 
 uniform vec3 UdColor;
 uniform vec3 UaColor;
@@ -49,15 +50,25 @@ void main()
 	4 : Specular Parameters (ks.rgb, shinness power n)
 	5 : Ambient + Emission (rgb)
 	*/
-	vec4 texel = texture2D(uTexID, vTexCoord);
-	vec4 alphaTexel = texture2D(uAlphaTexID, vTexCoord);
+	if(uApplyTexture == 1){
+		vec4 texel = texture2D(uTexID, vTexCoord);
+		vec4 alphaTexel = texture2D(uAlphaTexID, vTexCoord);
 
-	gl_FragData[0] = texel;
+		gl_FragData[0] = texel;
 	
-	if(uCompleteGlow == 1)
-		gl_FragData[1] = texel;
-	else
-		gl_FragData[1] = texel*alphaTexel;
+		if(uCompleteGlow == 1)
+			gl_FragData[1] = texel;
+		else
+			gl_FragData[1] = texel*alphaTexel;
+	}
+	else {
+		gl_FragData[0] = vec4(UdColor, 1);
+
+		if(uCompleteGlow == 1)
+			gl_FragData[1] = vec4(UdColor, 1);
+		else
+			gl_FragData[1] = vec4(0, 0, 0 , 1);
+	}
 
 	gl_FragData[2] = vec4(vVertexPos, 1);
 	gl_FragData[3] = vec4(normalize(vNormal), 1);

@@ -43,13 +43,14 @@ public:
     }
 
     void init(){
-        mesh = LoadManager::getMesh("cube.obj");
+        mesh = LoadManager::getMesh("cube-textures.obj");
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
+        loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
+        shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
 
         //loadIdentity();
         //addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
@@ -58,13 +59,13 @@ public:
     }
 
     void drawObject(){
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uEye"), 
-            CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-
         Material::SetMaterial(Material::SILVER, shader);
+        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+
+        enableAttrArray2f("aTexCoord", "texBufObj");
+
+        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
+        glUniform1i(shader->getHandle("uApplyTexture"), 0);
         
         
         for (int index = 0; index < mapRowsSize*mapColsSize; index++){
