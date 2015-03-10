@@ -155,6 +155,7 @@ namespace Render{
         lightShader->loadHandle("uLightColor");
         lightShader->loadHandle("uCutOffAngle");
         lightShader->loadHandle("uLightDir");
+        lightShader->loadHandle("uAmbientPass");
     }
 
     void LightProcessor::pass(Processor * processor, std::list<Light *> lights){
@@ -186,7 +187,8 @@ namespace Render{
         glUniformMatrix4fv(lightShader->getHandle("uViewMatrix"), 1, GL_FALSE,
             glm::value_ptr(CamManager::currentCam()->getViewMatrix()));
 
-        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+        unsigned int i = 1;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++, i++){
             (*it)->load(lightShader->getHandle("uLightPos"),
                         lightShader->getHandle("uLightDir"),
                         lightShader->getHandle("uLightColor"),
@@ -212,6 +214,13 @@ namespace Render{
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
             glUniform1i(lightShader->getHandle("uAmbientID"), 4);
+
+            if (i == lights.size()){
+                glUniform1i(lightShader->getHandle("uAmbientPass"), 1);
+            }
+            else{
+                glUniform1i(lightShader->getHandle("uAmbientPass"), 0);
+            }
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }

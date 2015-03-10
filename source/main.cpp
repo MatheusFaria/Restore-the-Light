@@ -202,6 +202,11 @@ void setupLights(){
         glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
     LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
         glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+
+    for (int i = 0; i < 100; i++){
+        LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
+            glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+    }
 }
 
 void installShaders(){

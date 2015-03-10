@@ -20,6 +20,8 @@ uniform vec3 uLightFallOff;
 uniform vec3 uLightColor;
 uniform float uCutOffAngle;
 
+uniform int uAmbientPass;
+
 varying vec2 vTexCoord;
 
 void main()
@@ -71,6 +73,10 @@ void main()
 	}
 	else{
 		I = Ic*(Id + Is)/(a + b*d + c*d*d);
+	}
+
+	if(uAmbientPass == 1){
+		I += Ia_Ie;
 	}
 
 	gl_FragData[0] = vec4(I, 1);
