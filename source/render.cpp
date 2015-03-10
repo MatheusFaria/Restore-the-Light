@@ -153,6 +153,8 @@ namespace Render{
         lightShader->loadHandle("uLightPos");
         lightShader->loadHandle("uLightFallOff");
         lightShader->loadHandle("uLightColor");
+        lightShader->loadHandle("uCutOffAngle");
+        lightShader->loadHandle("uLightDir");
     }
 
     void LightProcessor::pass(Processor * processor, std::list<Light *> lights){
@@ -186,8 +188,10 @@ namespace Render{
 
         for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
             (*it)->load(lightShader->getHandle("uLightPos"),
+                        lightShader->getHandle("uLightDir"),
                         lightShader->getHandle("uLightColor"),
-                        lightShader->getHandle("uLightFallOff"));
+                        lightShader->getHandle("uLightFallOff"),
+                        lightShader->getHandle("uCutOffAngle"));
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));

@@ -9,13 +9,22 @@
 class Light{
 public:
     Light();
-    Light(glm::vec3 _pos, glm::vec3 _color, glm::vec3 _fallOff, int _type);
+    Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _dir, glm::vec3 _fallOff, float _cutOffAngle, int _type);
 
-    void load(const GLint posHandle, const GLint colorHandle, const GLint fallOffHandle);
+    Light(glm::vec3 _color, glm::vec3 _dir);
+    Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _fallOff);
+    Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _dir, glm::vec3 _fallOff, float _cutOffAngle);
+
+
+    void load(const GLint posHandle, const GLint dirHandle, const GLint colorHandle,
+        const GLint fallOffHandle, const GLint cutOffAngleHandle);
 
     glm::vec3 pos;
+    glm::vec3 dir;
+    glm::vec3 direction;
     glm::vec3 color;
     glm::vec3 fallOff;
+    float cutOffAngle;
     int type;
 
     static const int DIRECTIONAL = 0;
