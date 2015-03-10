@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include "load_manager.h"
 #include "virtual_camera.h"
@@ -140,22 +141,8 @@ namespace Render{
     void LightProcessor::init(){
         Processor::init();
 
-        lightShader = LoadManager::getShader("default-texture-vertex.glsl", 
-                                             "default-lighting-fragment.glsl");
-        lightShader->loadHandle("aPosition");
-        lightShader->loadHandle("uDiffuseID");
-        lightShader->loadHandle("uPositionID");
-        lightShader->loadHandle("uNormalID");
-        lightShader->loadHandle("uSpecularID");
-        lightShader->loadHandle("uAmbientID");
-        lightShader->loadHandle("uViewMatrix");
-        lightShader->loadHandle("uEye");
-        lightShader->loadHandle("uLightPos");
-        lightShader->loadHandle("uLightFallOff");
-        lightShader->loadHandle("uLightColor");
-        lightShader->loadHandle("uCutOffAngle");
-        lightShader->loadHandle("uLightDir");
-        lightShader->loadHandle("uAmbientPass");
+        initShader();
+        initGeometry();
     }
 
     void LightProcessor::pass(Processor * processor, std::list<Light *> lights){
@@ -174,7 +161,9 @@ namespace Render{
 
         glUseProgram(lightShader->getId());
 
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glEnableVertexAttribArray(lightShader->getHandle("aPosition"));
         glVertexAttribPointer(lightShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -188,12 +177,21 @@ namespace Render{
             glm::value_ptr(CamManager::currentCam()->getViewMatrix()));
 
         unsigned int i = 1;
+        glm::mat4 MVP;
         for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++, i++){
             (*it)->load(lightShader->getHandle("uLightPos"),
                         lightShader->getHandle("uLightDir"),
                         lightShader->getHandle("uLightColor"),
                         lightShader->getHandle("uLightFallOff"),
                         lightShader->getHandle("uCutOffAngle"));
+
+            MVP = glm::mat4(1.0f);
+            MVP = CamManager::currentCam()->projectionMatrix *
+                  CamManager::currentCam()->getViewMatrix() *
+                  glm::translate(glm::mat4(1.0f), (*it)->pos) * 
+                  glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)) * 
+                  MVP;
+            glUniformMatrix4fv(lightShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(MVP));
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
@@ -222,7 +220,7 @@ namespace Render{
                 glUniform1i(lightShader->getHandle("uAmbientPass"), 0);
             }
 
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawElements(GL_TRIANGLES, (int)lightArea->getIndices().size(), GL_UNSIGNED_INT, 0);
         }
 
         fbos[0]->disable();
@@ -231,7 +229,45 @@ namespace Render{
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glUseProgram(0);
+    }
+
+    void LightProcessor::initShader(){
+        lightShader = LoadManager::getShader("default-lighting-vertex.glsl",
+            "default-lighting-fragment.glsl");
+        lightShader->loadHandle("aPosition");
+        lightShader->loadHandle("uMVP");
+
+        lightShader->loadHandle("uDiffuseID");
+        lightShader->loadHandle("uPositionID");
+        lightShader->loadHandle("uNormalID");
+        lightShader->loadHandle("uSpecularID");
+        lightShader->loadHandle("uAmbientID");
+        lightShader->loadHandle("uViewMatrix");
+        lightShader->loadHandle("uEye");
+        lightShader->loadHandle("uLightPos");
+        lightShader->loadHandle("uLightFallOff");
+        lightShader->loadHandle("uLightColor");
+        lightShader->loadHandle("uCutOffAngle");
+        lightShader->loadHandle("uLightDir");
+        lightShader->loadHandle("uAmbientPass");
+    }
+
+    void LightProcessor::initGeometry(){
+        lightArea = LoadManager::getMesh("lightarea.obj");
+
+        glGenBuffers(1, &vertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glBufferData(GL_ARRAY_BUFFER, lightArea->getVertices().size()*sizeof(float), 
+            &lightArea->getVertices()[0], GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glGenBuffers(1, &elementBuffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, lightArea->getIndices().size()*sizeof(unsigned int), 
+            &lightArea->getIndices()[0], GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
 

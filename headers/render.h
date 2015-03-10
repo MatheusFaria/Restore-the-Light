@@ -11,6 +11,7 @@
 #include "object3d.h"
 #include "shader.h"
 #include "light.h"
+#include "mesh.h"
 
 namespace Render{
     class Processor{
@@ -57,6 +58,12 @@ namespace Render{
         void pass(Processor * processor, std::list<Light *> lights);
     private:
         Shader * lightShader;
+        Mesh * lightArea;
+
+        GLuint vertexBuffer, elementBuffer;
+
+        void initShader();
+        void initGeometry();
     };
 
     class PostProcessor : public Processor{

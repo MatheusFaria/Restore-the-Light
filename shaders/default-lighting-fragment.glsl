@@ -22,10 +22,9 @@ uniform float uCutOffAngle;
 
 uniform int uAmbientPass;
 
-varying vec2 vTexCoord;
-
 void main()
 {
+	vec2 vTexCoord = gl_FragCoord.xy/vec2(600, 600);
 	vec4 specularParams = texture2D(uSpecularID, vTexCoord);
 
 	vec3 light = vec3(uViewMatrix * vec4(uLightPos.xyz, 1));
@@ -79,5 +78,8 @@ void main()
 		I += Ia_Ie;
 	}
 
+	I += vec3(0.03, 0, 0);
 	gl_FragData[0] = vec4(I, 1);
+
+	//gl_FragData[0] = vec4(1, 0, 0, 1);
 }

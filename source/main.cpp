@@ -191,22 +191,23 @@ void setupCams(){
 }
 
 void setupLights(){
-    float z = 15;
+    float z = 5;
+    glm::vec3 att = glm::vec3(0, 0, 0.03);
     LightManager::addLight(new Light(glm::vec3(1, 0, 0),  glm::vec3(0, z, 0),
-        glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
     LightManager::addLight(new Light(glm::vec3(0, 0, 1), glm::vec3(-50, z, 0),
-        glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
     LightManager::addLight(new Light(glm::vec3(0, 1, 0), glm::vec3(0, z, -50),
-        glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
     LightManager::addLight(new Light(glm::vec3(1, 1, 0), glm::vec3(-50, z, -50),
-        glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
     LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
-        glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
 
-    for (int i = 0; i < 100; i++){
+    /*for (int i = 0; i < 50; i++){
         LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
-            glm::vec3(0, -1, 0), glm::vec3(0, 0.03, 0), 45.0f, Light::SPOT_LIGHT));
-    }
+            glm::vec3(0, -1, 0), glm::vec3(0, 1, 0.03), 45.0f, Light::SPOT_LIGHT));
+    }*/
 }
 
 void installShaders(){

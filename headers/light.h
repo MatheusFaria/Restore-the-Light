@@ -19,6 +19,9 @@ public:
     void load(const GLint posHandle, const GLint dirHandle, const GLint colorHandle,
         const GLint fallOffHandle, const GLint cutOffAngleHandle);
 
+    float lightAreaRadius();
+
+
     glm::vec3 pos;
     glm::vec3 dir;
     glm::vec3 direction;

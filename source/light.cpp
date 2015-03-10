@@ -1,5 +1,7 @@
 #include "light.h"
 
+#include <algorithm>
+
 # define M_PI 3.141592
 
 #include "log.h"
@@ -35,6 +37,10 @@ void Light::load(const GLint posHandle, const GLint dirHandle, const GLint color
     glUniform1f(cutOffAngleHandle, cutOffAngle*M_PI/180.0f);
 }
 
+float Light::lightAreaRadius(){
+    float C = std::max(color.r, std::max(color.g, color.b));
+    return (-fallOff.y + sqrt(fallOff.y*fallOff.y - 4 * fallOff.z*(fallOff.x - 256 * C)))/(2.0*fallOff.z);
+}
 
 std::list<Light *> LightManager::lights;
 
