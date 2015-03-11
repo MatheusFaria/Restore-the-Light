@@ -59,13 +59,13 @@ void main()
 		if(uCompleteGlow == 1)
 			gl_FragData[1] = texel;
 		else
-			gl_FragData[1] = texel*alphaTexel;
+			gl_FragData[1] = alphaTexel;
 	}
 	else {
 		gl_FragData[0] = vec4(UdColor, 1);
 
 		if(uCompleteGlow == 1)
-			gl_FragData[1] = vec4(UdColor, 1);
+			gl_FragData[1] = vec4(1);
 		else
 			gl_FragData[1] = vec4(0, 0, 0 , 1);
 	}

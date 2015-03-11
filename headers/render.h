@@ -12,6 +12,7 @@
 #include "shader.h"
 #include "light.h"
 #include "mesh.h"
+#include "texture.h"
 
 namespace Render{
     class Processor{
@@ -78,6 +79,7 @@ namespace Render{
         PostProcessor(int _width, int _height, int _nTextures, int _nFBOs);
 
         void passBlur(Processor * processor, int cycles, Shader * blurShader);
+        void passMultiplyTextures(GLuint tex1, GLuint tex2, Shader * shader);
         void passBloom(Processor * processorAlpha, Processor * processorDiffuse,
             Shader * bloomShader, Shader * blurShader, int cycles);
     };

@@ -588,7 +588,7 @@ namespace Render{
         glVertexAttribPointer(blurShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         outFBO = processor->getOutFBO();
-        int alphaMapTexID = 1;
+        int alphaMapTexID = 0;
         for (int cycle = 0; cycle < cycles; cycle++){
             for (int i = 0; i < 2; i++){
                 fbos[i]->enable();
@@ -620,6 +620,42 @@ namespace Render{
         glUseProgram(0);
     }
 
+
+    void PostProcessor::passMultiplyTextures(GLuint tex1, GLuint tex2, Shader * shader){
+        glViewport(0, 0, width, height);
+
+        glUseProgram(shader->getId());
+        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(shader->getHandle("aPosition"));
+        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        fbos[0]->enable();
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex1);
+        glUniform1i(shader->getHandle("uTex1ID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tex2);
+        glUniform1i(shader->getHandle("uTex2ID"), 1);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        fbos[0]->disable();
+        outFBO = fbos[0];
+
+        glDisableVertexAttribArray(shader->getHandle("aPosition"));
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glUseProgram(0);
+    }
 
     void PostProcessor::passBloom(Processor * processorAlpha, Processor * processorDiffuse, 
         Shader * bloomShader, Shader * blurShader, int cycles){

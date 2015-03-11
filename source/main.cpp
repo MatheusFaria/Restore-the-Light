@@ -95,17 +95,17 @@ void setupLights(){
     glm::vec3 att = glm::vec3(0, 0.03, 0);
     LightManager::addLight(new Light(glm::vec3(1, 1, 1),  glm::vec3(0, z, 0),
         glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f, Light::POINT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(0, 0, 1), glm::vec3(-50, z, 0),
+    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-50, z, 0),
         glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(0, 1, 0), glm::vec3(0, z, -50),
+    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(0, z, -50),
         glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(-50, z, -50),
+    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-50, z, -50),
         glm::vec3(0, -1, 0), att, 45.0f, Light::DIRECTIONAL));
-    LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(-25, z, -25),
+    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
         glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
 
-    for (int i = 0; i < 100; i++){
-        LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(-25, z, -25),
+    for (int i = 0; i < 15; i++){
+        LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
             glm::vec3(0, -1, 0), glm::vec3(0, 1, 0.03), 45.0f, Light::SPOT_LIGHT));
     }
 }
@@ -166,6 +166,11 @@ void installShaders(){
     shader->loadHandle("aPosition");
     shader->loadHandle("uTexID");
     shader->loadHandle("uBlurTexID");
+
+    shader = LoadManager::getShader("default-texture-vertex.glsl", "multply-two-textures-fragment.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uTex1ID");
+    shader->loadHandle("uTex2ID");
 }
 
 void installMeshes(){
@@ -207,7 +212,7 @@ void createGaussBlurShader(){
 
         "void main()" << eol <<
         "{" << eol <<
-        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 2, uDir), 1);" << eol <<
+        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 1, uDir), 1);" << eol <<
         "}" << eol;
 
     ofstream file;
@@ -271,7 +276,7 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
-    int rows = 25, cols = 25;
+    int rows = 10, cols = 10;
 
     GameMap * gamemap = new GameMap(string(rows*cols, 'c'), rows, cols);
     gamemap->init();
@@ -288,6 +293,9 @@ int main(int argc, char **argv)
 
     Render::PostProcessor * blurPost = new Render::PostProcessor(g_width, g_height, 1, 2);
     blurPost->init();
+
+    Render::PostProcessor * alphaPost = new Render::PostProcessor(g_width, g_height, 1, 1);
+    alphaPost->init();
 
     Render::LightProcessor * lProcessor = new Render::LightProcessor(g_width, g_height, 1);
     lProcessor->init();
@@ -306,10 +314,14 @@ int main(int argc, char **argv)
 
         lProcessor->pass(gBuffer, LightManager::getPointLights(), 
             LightManager::getSpotLights(), LightManager::getDirectionalLights());
-        lProcessor->displayTexture(0);
+        //lProcessor->displayTexture(0);
 
-        blurPost->passBloom(gBuffer, lProcessor, bloomshader, shader, 2);
-        //blurPost->displayTexture(0);
+        alphaPost->passMultiplyTextures(gBuffer->getOutFBO()->getTexture(1),
+            lProcessor->getOutFBO()->getTexture(0),
+            LoadManager::getShader("default-texture-vertex.glsl", "multply-two-textures-fragment.glsl"));
+
+        blurPost->passBloom(alphaPost, lProcessor, bloomshader, shader, 2);
+        blurPost->displayTexture(0);
 
         frames++;
         if (glfwGetTime() - time >= 1.0){

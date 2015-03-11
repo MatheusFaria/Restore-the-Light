@@ -51,5 +51,5 @@ vec3 gaussianBlur2Pass(sampler2D texID, vec2 texel, float resolution, float radi
 }
 void main()
 {
-    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 2, uDir), 1);
+    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 1, uDir), 1);
 }

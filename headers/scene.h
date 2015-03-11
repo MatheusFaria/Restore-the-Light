@@ -34,7 +34,7 @@ public:
     string mapLayout;
     int mapRowsSize;
     int mapColsSize;
-
+    GLuint tex, atex;
     GameMap(string _mapLayout, int rows, int cols):
     mapLayout(_mapLayout), mapRowsSize(rows), mapColsSize(cols){
         if (mapLayout.size() != mapRowsSize*mapColsSize){
@@ -52,6 +52,9 @@ public:
 
         shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
 
+        tex = TextureManager::getTexture("enemy.bmp")->getTexture();
+        atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
+
         //loadIdentity();
         //addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
         //addTransformation(glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0, 0, 1)));
@@ -59,13 +62,21 @@ public:
     }
 
     void drawObject(){
-        Material::SetMaterial(Material::SILVER, shader);
+        Material::SetMaterial(Material::SILVER, shader, false);
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
 
         enableAttrArray2f("aTexCoord", "texBufObj");
 
         glUniform1i(shader->getHandle("uCompleteGlow"), 0);
-        glUniform1i(shader->getHandle("uApplyTexture"), 0);
+        glUniform1i(shader->getHandle("uApplyTexture"), 1);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glUniform1i(shader->getHandle("uTexID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, atex);
+        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
         
         
         for (int index = 0; index < mapRowsSize*mapColsSize; index++){
