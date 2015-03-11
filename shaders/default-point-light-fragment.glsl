@@ -42,7 +42,7 @@ void main()
 	float a = uLightFallOff.x, b = uLightFallOff.y, c = uLightFallOff.z;
 	vec3 Ic = uLightColor;
 
-	vec3 I = Ic*(Id + Is)/(a + b*d + c*d*d);
+	vec3 I = 0.5*Ic*(Id + Is)/(a + b*d + c*d*d);
 
 	gl_FragData[0] = vec4(I, 1);
 }

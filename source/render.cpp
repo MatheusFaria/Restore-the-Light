@@ -31,22 +31,22 @@ namespace Render{
     }
 
     void Processor::prepareDisplay(){
-        int planeVerticesSize = 6;
-        int nComponents = 3;
         float planeVertices[] = {
-            -1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-
             -1.0f, 1.0f, 0.0f,
             -1.0f, -1.0f, 0.0f,
             1.0f, -1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
         };
+
+        unsigned int idx[] = { 0, 1, 2, 0, 2, 3 };
 
         glGenBuffers(1, &vertexBuf);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices),
-            planeVertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+
+        glGenBuffers(1, &elementBuf);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
 
         shader = LoadManager::getShader("default-texture-vertex.glsl",
             "default-texture-fragment.glsl");
@@ -54,6 +54,7 @@ namespace Render{
         shader->loadHandle("uTexID");
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     void Processor::displayTextures(std::vector<int> texIDs){
@@ -64,6 +65,8 @@ namespace Render{
         glViewport(0, 0, width, height);
 
         glUseProgram(shader->getId());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
         glEnableVertexAttribArray(shader->getHandle("aPosition"));
@@ -83,11 +86,12 @@ namespace Render{
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glDisableVertexAttribArray(shader->getHandle("aPosition"));
         
         glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glUseProgram(0);
     }
@@ -163,6 +167,7 @@ namespace Render{
         passPointLights(processor, pointLights);
         passSpotLights(processor, spotLights);
         passDirectionalLights(processor, directionalLights);
+        passAmbientLight(processor);
 
         fbos[0]->disable();
         
@@ -175,7 +180,7 @@ namespace Render{
 
 
     void LightProcessor::passPointLights(Processor * processor, std::list<Light *> lights){
-        glUseProgram(pointShader->getId());
+        /*glUseProgram(pointShader->getId());
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
 
@@ -219,19 +224,62 @@ namespace Render{
             glUniform3f(pointShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(pointShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
 
-            std::cout << light->lightAreaRadius() << std::endl;
-
             MVP = VP *
-                  glm::translate(glm::mat4(1.0f), (*it)->pos) *
-                  glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
+                  glm::translate(glm::mat4(1.0f), light->pos) *
+                  glm::scale(glm::mat4(1.0f), glm::vec3(10));
             glUniformMatrix4fv(pointShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(MVP));
 
             glDrawElements(GL_TRIANGLES, (int)pointLightArea->getIndices().size(), GL_UNSIGNED_INT, 0);
+        }*/
+        glUseProgram(pointShader->getId());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(pointShader->getHandle("aPosition"));
+        glVertexAttribPointer(pointShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glUniform3f(pointShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glUniform2f(pointShader->getHandle("uScreenSize"), 600, 600);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glUniform1i(pointShader->getHandle("uDiffuseID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+        glUniform1i(pointShader->getHandle("uPositionID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+        glUniform1i(pointShader->getHandle("uNormalID"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+        glUniform1i(pointShader->getHandle("uSpecularID"), 3);
+
+        Light * light;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+            light = *it;
+
+            glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
+
+            glUniform3f(pointShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(pointShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(pointShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
+
+            glUniformMatrix4fv(pointShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
     }
 
     void LightProcessor::passSpotLights(Processor * processor, std::list<Light *> lights){
-        glUseProgram(spotShader->getId());
+        /*glUseProgram(spotShader->getId());
         
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
 
@@ -279,16 +327,65 @@ namespace Render{
             glUniform1f(spotShader->getHandle("uLightCutOffAngle"), glm::cos(light->cutOffAngle));
 
             MVP = VP *
-                glm::translate(glm::mat4(1.0f), (*it)->pos) *
+                glm::translate(glm::mat4(1.0f), light->pos) *
                 glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
             glUniformMatrix4fv(spotShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(MVP));
 
             glDrawElements(GL_TRIANGLES, (int)pointLightArea->getIndices().size(), GL_UNSIGNED_INT, 0);
+        }*/
+
+        glUseProgram(spotShader->getId());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(spotShader->getHandle("aPosition"));
+        glVertexAttribPointer(spotShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glUniform3f(spotShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glUniform2f(spotShader->getHandle("uScreenSize"), 600, 600);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glUniform1i(spotShader->getHandle("uDiffuseID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+        glUniform1i(spotShader->getHandle("uPositionID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+        glUniform1i(spotShader->getHandle("uNormalID"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+        glUniform1i(spotShader->getHandle("uSpecularID"), 3);
+
+        Light * light;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+            light = *it;
+
+            glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
+            glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
+
+            glUniform3f(spotShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(spotShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(spotShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
+            glUniform3f(spotShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
+            glUniform1f(spotShader->getHandle("uLightCutOffAngle"), glm::cos(light->cutOffAngle));
+
+            glUniformMatrix4fv(spotShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
     }
 
     void LightProcessor::passDirectionalLights(Processor * processor, std::list<Light *> lights){
-        glUseProgram(directionalShader->getId());
+        /*glUseProgram(directionalShader->getId());
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
         glEnableVertexAttribArray(directionalShader->getHandle("aPosition"));
@@ -315,27 +412,84 @@ namespace Render{
         glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
         glUniform1i(directionalShader->getHandle("uSpecularID"), 3);
 
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
-        glUniform1i(directionalShader->getHandle("uAmbientID"), 4);
-
-        glUniform1i(directionalShader->getHandle("uAmbientPass"), 0);
+        glUniform2f(directionalShader->getHandle("uScreenSize"), 600, 600);
 
         Light * light;
-        unsigned int i = 1;
-        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++, i++){
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
             light = *it;
 
             glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
 
             glUniform3f(directionalShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
             glUniform3f(directionalShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
-      
-            if (i == lights.size()){
-                glUniform1i(directionalShader->getHandle("uAmbientPass"), 1);
-            }
+
             glDrawArrays(GL_TRIANGLES, 0, 6);
+        }*/
+
+        glUseProgram(directionalShader->getId());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(directionalShader->getHandle("aPosition"));
+        glVertexAttribPointer(directionalShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glUniform3f(directionalShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glUniform1i(directionalShader->getHandle("uDiffuseID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+        glUniform1i(directionalShader->getHandle("uPositionID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+        glUniform1i(directionalShader->getHandle("uNormalID"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+        glUniform1i(directionalShader->getHandle("uSpecularID"), 3);
+
+        glUniform2f(directionalShader->getHandle("uScreenSize"), 600, 600);
+
+        Light * light;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+            light = *it;
+
+            glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
+
+            glUniform3f(directionalShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(directionalShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
+
+            glUniformMatrix4fv(directionalShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
+    }
+
+    void LightProcessor::passAmbientLight(Processor * processor){
+        glUseProgram(ambientShader->getId());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(ambientShader->getHandle("aPosition"));
+        glVertexAttribPointer(ambientShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
+        glUniform1i(ambientShader->getHandle("uAmbientID"), 0);
+
+        glUniform2f(ambientShader->getHandle("uScreenSize"), 600, 600);
+
+        glUniformMatrix4fv(ambientShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
     void LightProcessor::initShader(){
@@ -369,18 +523,25 @@ namespace Render{
         spotShader->loadHandle("uLightColor");
         spotShader->loadHandle("uScreenSize");
 
-        directionalShader = LoadManager::getShader("default-texture-vertex.glsl",
+        directionalShader = LoadManager::getShader("default-lighting-vertex.glsl",
             "default-directional-light-fragment.glsl");
         directionalShader->loadHandle("aPosition");
+        directionalShader->loadHandle("uMVP");
         directionalShader->loadHandle("uDiffuseID");
         directionalShader->loadHandle("uPositionID");
         directionalShader->loadHandle("uNormalID");
         directionalShader->loadHandle("uSpecularID");
-        directionalShader->loadHandle("uAmbientID");
         directionalShader->loadHandle("uEye");
         directionalShader->loadHandle("uLightDir");
         directionalShader->loadHandle("uLightColor");
-        directionalShader->loadHandle("uAmbientPass");
+        directionalShader->loadHandle("uScreenSize");
+
+        ambientShader = LoadManager::getShader("default-lighting-vertex.glsl",
+            "default-ambient-light-fragment.glsl");
+        ambientShader->loadHandle("aPosition");
+        ambientShader->loadHandle("uMVP");
+        ambientShader->loadHandle("uAmbientID");
+        ambientShader->loadHandle("uScreenSize");
     }
 
     void LightProcessor::initGeometry(){
@@ -420,6 +581,8 @@ namespace Render{
         glUseProgram(blurShader->getId());
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
         glEnableVertexAttribArray(blurShader->getHandle("aPosition"));
         glVertexAttribPointer(blurShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -441,7 +604,7 @@ namespace Render{
                 else
                     glUniform2f(blurShader->getHandle("uDir"), 0, 1);
 
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
                 fbos[i]->disable();
 
@@ -467,6 +630,8 @@ namespace Render{
         glUseProgram(bloomShader->getId());
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
         glEnableVertexAttribArray(bloomShader->getHandle("aPosition"));
         glVertexAttribPointer(bloomShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -483,7 +648,7 @@ namespace Render{
         glBindTexture(GL_TEXTURE_2D, outFBO->getTexture(0));
         glUniform1i(bloomShader->getHandle("uBlurTexID"), 1);
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         fbos[0]->disable();
         outFBO = fbos[0];

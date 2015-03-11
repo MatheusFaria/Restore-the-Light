@@ -33,7 +33,7 @@ namespace Render{
         glm::vec4 refreshColor;
         int width, height, nTextures, nFBOs;
         bool depth;
-        GLuint vertexBuf;
+        GLuint vertexBuf, elementBuf;
 
     private:
         Shader * shader;
@@ -60,9 +60,10 @@ namespace Render{
         void passPointLights(Processor * processor, std::list<Light *> lights);
         void passSpotLights(Processor * processor, std::list<Light *> lights);
         void passDirectionalLights(Processor * processor, std::list<Light *> lights);
+        void passAmbientLight(Processor * processor);
 
     private:
-        Shader * directionalShader, *pointShader, *spotShader;
+        Shader * directionalShader, *pointShader, *spotShader, *ambientShader;
         Mesh * pointLightArea;
 
         GLuint vertexBuffer, elementBuffer;

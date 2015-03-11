@@ -40,6 +40,7 @@ void Light::load(const GLint posHandle, const GLint dirHandle, const GLint color
 
 float Light::lightAreaRadius(){
     float C = std::max(color.r, std::max(color.g, color.b));
+    float I = 0.0001f;
     if (fallOff.z == 0.0f){
         if (fallOff.y == 0.0f){
             if (fallOff.x == 0.0f){
@@ -47,9 +48,9 @@ float Light::lightAreaRadius(){
             }
             return 1 / fallOff.x;
         }
-        return (-fallOff.x + 256 * C) / fallOff.y;
+        return (-fallOff.x + 256 * I * C) / fallOff.y;
     }
-    return (-fallOff.y + sqrt(fallOff.y*fallOff.y - 4 * fallOff.z*(fallOff.x - 256 * C)))/(2.0*fallOff.z);
+    return (-fallOff.y + sqrt(fallOff.y*fallOff.y - 4 * fallOff.z*(fallOff.x - 256 * I * C)))/(2.0*fallOff.z);
 }
 
 std::list<Light *> LightManager::pointLights;

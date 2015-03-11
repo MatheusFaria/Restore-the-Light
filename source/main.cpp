@@ -39,106 +39,6 @@ int hot_key = 0;
 
 Hero * hero;
 
-/*
-class Ball : public Object3D{
-public:
-    Ball(){}
-
-    void init(){
-        mesh = LoadManager::getMesh("cube-textures.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadTextureBuffer("texBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert-tex.glsl", "frag-map.glsl");
-
-        tex = TextureManager::getTexture("yellow.bmp");
-        atex = TextureManager::getTexture("red-gray-alpha.bmp");
-        //tex = TextureManager::getTexture("bricks.bmp");
-    }
-
-    void drawObject(){
-        enableAttrArray2f("aTexCoord", "texBufObj");
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex->getTexture());
-        glUniform1i(shader->getHandle("uTexID"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, atex->getTexture());
-        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
-
-        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
-
-        loadIdentity();
-
-        rot += 0.5f;
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -1)));
-        addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-    float rot = 45;
-    Texture * tex, * atex;
-};
-
-class Item : public Object3D{
-public:
-    Item() {}
-
-    void init(){
-        mesh = LoadManager::getMesh("sphere-tex.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadTextureBuffer("texBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
-
-        tex = TextureManager::getTexture("red-gray.bmp");
-        atex = TextureManager::getTexture("red-gray-alpha.bmp");
-
-        rotAxe = 0;
-    }
-
-    void drawObject(){
-        Material::SetMaterial(Material::GOLD, shader);
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-
-        enableAttrArray2f("aTexCoord", "texBufObj");
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex->getTexture());
-        glUniform1i(shader->getHandle("uTexID"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, atex->getTexture());
-        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
-
-        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
-
-        loadIdentity();
-
-        glm::vec3 pos = glm::vec3(0, 0, -1);
-
-        rotAxe += 0.5;
-        addTransformation(glm::translate(glm::mat4(1.0f), pos));
-        addTransformation(glm::rotate(glm::mat4(1.0f), rotAxe, glm::vec3(0, 1, 0)));
-        addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.6)));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-
-    float rotAxe;
-    Texture * tex, *atex;
-};
-*/
-
-
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_L && action == GLFW_PRESS)
@@ -191,23 +91,23 @@ void setupCams(){
 }
 
 void setupLights(){
-    float z = 2;
+    float z = 7;
     glm::vec3 att = glm::vec3(0, 0.03, 0);
     LightManager::addLight(new Light(glm::vec3(1, 1, 1),  glm::vec3(0, z, 0),
         glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f, Light::POINT_LIGHT));
-    //LightManager::addLight(new Light(glm::vec3(0, 0, 1), glm::vec3(-50, z, 0),
-    //    glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-   // LightManager::addLight(new Light(glm::vec3(0, 1, 0), glm::vec3(0, z, -50),
-    //    glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(1, 1, 0), glm::vec3(-50, z, -50),
-        glm::vec3(-1, -1, -1), att, 45.0f, Light::DIRECTIONAL));
-    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
+    LightManager::addLight(new Light(glm::vec3(0, 0, 1), glm::vec3(-50, z, 0),
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(0, 1, 0), glm::vec3(0, z, -50),
+        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
+    LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(-50, z, -50),
+        glm::vec3(0, -1, 0), att, 45.0f, Light::DIRECTIONAL));
+    LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(-25, z, -25),
         glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
 
-    /*for (int i = 0; i < 50; i++){
-        LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
+    for (int i = 0; i < 100; i++){
+        LightManager::addLight(new Light(glm::vec3(1, 0, 0), glm::vec3(-25, z, -25),
             glm::vec3(0, -1, 0), glm::vec3(0, 1, 0.03), 45.0f, Light::SPOT_LIGHT));
-    }*/
+    }
 }
 
 void installShaders(){
@@ -408,7 +308,7 @@ int main(int argc, char **argv)
             LightManager::getSpotLights(), LightManager::getDirectionalLights());
         lProcessor->displayTexture(0);
 
-        //blurPost->passBloom(gBuffer, lProcessor, bloomshader, shader, 2);
+        blurPost->passBloom(gBuffer, lProcessor, bloomshader, shader, 2);
         //blurPost->displayTexture(0);
 
         frames++;
