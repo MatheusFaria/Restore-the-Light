@@ -55,10 +55,15 @@ namespace Render{
         LightProcessor(int _width, int _height, int _nTextures);
 
         void init();
-        void pass(Processor * processor, std::list<Light *> lights);
+        void pass(Processor * processor, std::list<Light *> pointLights, std::list<Light *> spotLights, 
+            std::list<Light *> directionalLights);
+        void passPointLights(Processor * processor, std::list<Light *> lights);
+        void passSpotLights(Processor * processor, std::list<Light *> lights);
+        void passDirectionalLights(Processor * processor, std::list<Light *> lights);
+
     private:
-        Shader * lightShader;
-        Mesh * lightArea;
+        Shader * directionalShader, *pointShader, *spotShader;
+        Mesh * pointLightArea;
 
         GLuint vertexBuffer, elementBuffer;
 

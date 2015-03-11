@@ -145,11 +145,12 @@ namespace Render{
         initGeometry();
     }
 
-    void LightProcessor::pass(Processor * processor, std::list<Light *> lights){
+    void LightProcessor::pass(Processor * processor, std::list<Light *> pointLights, 
+                                std::list<Light *> spotLights, std::list<Light *> directionalLights){
         glViewport(0, 0, width, height);
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
-        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
 
         glEnable(GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
@@ -159,73 +160,12 @@ namespace Render{
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(lightShader->getId());
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glEnableVertexAttribArray(lightShader->getHandle("aPosition"));
-        glVertexAttribPointer(lightShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-
-        glUniform3f(lightShader->getHandle("uEye"),
-            CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-
-        glUniformMatrix4fv(lightShader->getHandle("uViewMatrix"), 1, GL_FALSE,
-            glm::value_ptr(CamManager::currentCam()->getViewMatrix()));
-
-        unsigned int i = 1;
-        glm::mat4 MVP;
-        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++, i++){
-            (*it)->load(lightShader->getHandle("uLightPos"),
-                        lightShader->getHandle("uLightDir"),
-                        lightShader->getHandle("uLightColor"),
-                        lightShader->getHandle("uLightFallOff"),
-                        lightShader->getHandle("uCutOffAngle"));
-
-            MVP = glm::mat4(1.0f);
-            MVP = CamManager::currentCam()->projectionMatrix *
-                  CamManager::currentCam()->getViewMatrix() *
-                  glm::translate(glm::mat4(1.0f), (*it)->pos) * 
-                  glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)) * 
-                  MVP;
-            glUniformMatrix4fv(lightShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(MVP));
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
-            glUniform1i(lightShader->getHandle("uDiffuseID"), 0);
-
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
-            glUniform1i(lightShader->getHandle("uPositionID"), 1);
-
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
-            glUniform1i(lightShader->getHandle("uNormalID"), 2);
-
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
-            glUniform1i(lightShader->getHandle("uSpecularID"), 3);
-
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
-            glUniform1i(lightShader->getHandle("uAmbientID"), 4);
-
-            if (i == lights.size()){
-                glUniform1i(lightShader->getHandle("uAmbientPass"), 1);
-            }
-            else{
-                glUniform1i(lightShader->getHandle("uAmbientPass"), 0);
-            }
-
-            glDrawElements(GL_TRIANGLES, (int)lightArea->getIndices().size(), GL_UNSIGNED_INT, 0);
-        }
+        passPointLights(processor, pointLights);
+        passSpotLights(processor, spotLights);
+        passDirectionalLights(processor, directionalLights);
 
         fbos[0]->disable();
         
-        glDisableVertexAttribArray(lightShader->getHandle("aPosition"));
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -233,40 +173,229 @@ namespace Render{
         glUseProgram(0);
     }
 
-    void LightProcessor::initShader(){
-        lightShader = LoadManager::getShader("default-lighting-vertex.glsl",
-            "default-lighting-fragment.glsl");
-        lightShader->loadHandle("aPosition");
-        lightShader->loadHandle("uMVP");
 
-        lightShader->loadHandle("uDiffuseID");
-        lightShader->loadHandle("uPositionID");
-        lightShader->loadHandle("uNormalID");
-        lightShader->loadHandle("uSpecularID");
-        lightShader->loadHandle("uAmbientID");
-        lightShader->loadHandle("uViewMatrix");
-        lightShader->loadHandle("uEye");
-        lightShader->loadHandle("uLightPos");
-        lightShader->loadHandle("uLightFallOff");
-        lightShader->loadHandle("uLightColor");
-        lightShader->loadHandle("uCutOffAngle");
-        lightShader->loadHandle("uLightDir");
-        lightShader->loadHandle("uAmbientPass");
+    void LightProcessor::passPointLights(Processor * processor, std::list<Light *> lights){
+        glUseProgram(pointShader->getId());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glEnableVertexAttribArray(pointShader->getHandle("aPosition"));
+        glVertexAttribPointer(pointShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glUniform3f(pointShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glUniform2f(pointShader->getHandle("uScreenSize"), 600, 600);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glUniform1i(pointShader->getHandle("uDiffuseID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+        glUniform1i(pointShader->getHandle("uPositionID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+        glUniform1i(pointShader->getHandle("uNormalID"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+        glUniform1i(pointShader->getHandle("uSpecularID"), 3);
+
+        glm::mat4 MVP, 
+                  VP = CamManager::currentCam()->projectionMatrix *
+                       CamManager::currentCam()->getViewMatrix();
+        Light * light;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+            light = *it;
+
+            glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
+
+            glUniform3f(pointShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(pointShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(pointShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
+
+            std::cout << light->lightAreaRadius() << std::endl;
+
+            MVP = VP *
+                  glm::translate(glm::mat4(1.0f), (*it)->pos) *
+                  glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
+            glUniformMatrix4fv(pointShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(MVP));
+
+            glDrawElements(GL_TRIANGLES, (int)pointLightArea->getIndices().size(), GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    void LightProcessor::passSpotLights(Processor * processor, std::list<Light *> lights){
+        glUseProgram(spotShader->getId());
+        
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glEnableVertexAttribArray(spotShader->getHandle("aPosition"));
+        glVertexAttribPointer(spotShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glUniform3f(spotShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glUniform2f(spotShader->getHandle("uScreenSize"), 600, 600);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glUniform1i(spotShader->getHandle("uDiffuseID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+        glUniform1i(spotShader->getHandle("uPositionID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+        glUniform1i(spotShader->getHandle("uNormalID"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+        glUniform1i(spotShader->getHandle("uSpecularID"), 3);
+
+        glm::mat4 MVP,
+            VP = CamManager::currentCam()->projectionMatrix *
+            CamManager::currentCam()->getViewMatrix();
+        Light * light;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
+            light = *it;
+
+            glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
+            glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
+
+            glUniform3f(spotShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(spotShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(spotShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
+            glUniform3f(spotShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
+            glUniform1f(spotShader->getHandle("uLightCutOffAngle"), glm::cos(light->cutOffAngle));
+
+            MVP = VP *
+                glm::translate(glm::mat4(1.0f), (*it)->pos) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
+            glUniformMatrix4fv(spotShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(MVP));
+
+            glDrawElements(GL_TRIANGLES, (int)pointLightArea->getIndices().size(), GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    void LightProcessor::passDirectionalLights(Processor * processor, std::list<Light *> lights){
+        glUseProgram(directionalShader->getId());
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(directionalShader->getHandle("aPosition"));
+        glVertexAttribPointer(directionalShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glUniform3f(directionalShader->getHandle("uEye"),
+            CamManager::currentCam()->eye.x,
+            CamManager::currentCam()->eye.y,
+            CamManager::currentCam()->eye.z);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
+        glUniform1i(directionalShader->getHandle("uDiffuseID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(2));
+        glUniform1i(directionalShader->getHandle("uPositionID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(3));
+        glUniform1i(directionalShader->getHandle("uNormalID"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
+        glUniform1i(directionalShader->getHandle("uSpecularID"), 3);
+
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
+        glUniform1i(directionalShader->getHandle("uAmbientID"), 4);
+
+        glUniform1i(directionalShader->getHandle("uAmbientPass"), 0);
+
+        Light * light;
+        unsigned int i = 1;
+        for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++, i++){
+            light = *it;
+
+            glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
+
+            glUniform3f(directionalShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(directionalShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
+      
+            if (i == lights.size()){
+                glUniform1i(directionalShader->getHandle("uAmbientPass"), 1);
+            }
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+    }
+
+    void LightProcessor::initShader(){
+        pointShader = LoadManager::getShader("default-lighting-vertex.glsl",
+            "default-point-light-fragment.glsl");
+        pointShader->loadHandle("aPosition");
+        pointShader->loadHandle("uMVP");
+        pointShader->loadHandle("uDiffuseID");
+        pointShader->loadHandle("uPositionID");
+        pointShader->loadHandle("uNormalID");
+        pointShader->loadHandle("uSpecularID");
+        pointShader->loadHandle("uEye");
+        pointShader->loadHandle("uLightPos");
+        pointShader->loadHandle("uLightFallOff");
+        pointShader->loadHandle("uLightColor");
+        pointShader->loadHandle("uScreenSize");
+
+        spotShader = LoadManager::getShader("default-lighting-vertex.glsl",
+            "default-spot-light-fragment.glsl");
+        spotShader->loadHandle("aPosition");
+        spotShader->loadHandle("uMVP");
+        spotShader->loadHandle("uDiffuseID");
+        spotShader->loadHandle("uPositionID");
+        spotShader->loadHandle("uNormalID");
+        spotShader->loadHandle("uSpecularID");
+        spotShader->loadHandle("uEye");
+        spotShader->loadHandle("uLightPos");
+        spotShader->loadHandle("uLightDir");
+        spotShader->loadHandle("uLightFallOff");
+        spotShader->loadHandle("uLightCutOffAngle");
+        spotShader->loadHandle("uLightColor");
+        spotShader->loadHandle("uScreenSize");
+
+        directionalShader = LoadManager::getShader("default-texture-vertex.glsl",
+            "default-directional-light-fragment.glsl");
+        directionalShader->loadHandle("aPosition");
+        directionalShader->loadHandle("uDiffuseID");
+        directionalShader->loadHandle("uPositionID");
+        directionalShader->loadHandle("uNormalID");
+        directionalShader->loadHandle("uSpecularID");
+        directionalShader->loadHandle("uAmbientID");
+        directionalShader->loadHandle("uEye");
+        directionalShader->loadHandle("uLightDir");
+        directionalShader->loadHandle("uLightColor");
+        directionalShader->loadHandle("uAmbientPass");
     }
 
     void LightProcessor::initGeometry(){
-        lightArea = LoadManager::getMesh("lightarea.obj");
+        pointLightArea = LoadManager::getMesh("lightarea.obj");
 
         glGenBuffers(1, &vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, lightArea->getVertices().size()*sizeof(float), 
-            &lightArea->getVertices()[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, pointLightArea->getVertices().size()*sizeof(float),
+            &pointLightArea->getVertices()[0], GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         glGenBuffers(1, &elementBuffer);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, lightArea->getIndices().size()*sizeof(unsigned int), 
-            &lightArea->getIndices()[0], GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pointLightArea->getIndices().size()*sizeof(unsigned int),
+            &pointLightArea->getIndices()[0], GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 

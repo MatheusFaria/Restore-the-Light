@@ -40,10 +40,14 @@ class LightManager{
 public:
     static void addLight(Light * light);
 
-    static std::list<Light *> getLights();
+    static std::list<Light *> getPointLights();
+    static std::list<Light *> getSpotLights();
+    static std::list<Light *> getDirectionalLights();
 
 private:
-    static std::list<Light *> LightManager::lights;
+    static std::list<Light *> LightManager::pointLights;
+    static std::list<Light *> LightManager::spotLights;
+    static std::list<Light *> LightManager::directionalLights;
 };
 
 #endif

@@ -54,7 +54,7 @@ public:
         addTransformation(glm::translate(glm::mat4(1.0f), pos));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
         bindModelMatrix("uModelMatrix");
-
+        
         if (!isFPS())
             drawElements();
     }
@@ -157,7 +157,7 @@ private:
         if (val == FPS){
             controlMode = FPS;
             CamManager::setCam(FPS_CAM);
-            //CamManager::currentCam()->turnOffY();
+            CamManager::currentCam()->turnOffY();
             CamManager::currentCam()->setAngles(-180, 0);
             CamManager::currentCam()->eye = pos;
             CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);

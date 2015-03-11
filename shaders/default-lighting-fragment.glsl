@@ -78,7 +78,7 @@ void main()
 		I += Ia_Ie;
 	}
 
-	I += vec3(0.03, 0, 0);
+	//I += vec3(0.03, 0, 0);
 	gl_FragData[0] = vec4(I, 1);
 
 	//gl_FragData[0] = vec4(1, 0, 0, 1);

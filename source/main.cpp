@@ -191,16 +191,16 @@ void setupCams(){
 }
 
 void setupLights(){
-    float z = 5;
-    glm::vec3 att = glm::vec3(0, 0, 0.03);
-    LightManager::addLight(new Light(glm::vec3(1, 0, 0),  glm::vec3(0, z, 0),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(0, 0, 1), glm::vec3(-50, z, 0),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(0, 1, 0), glm::vec3(0, z, -50),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
+    float z = 2;
+    glm::vec3 att = glm::vec3(0, 0.03, 0);
+    LightManager::addLight(new Light(glm::vec3(1, 1, 1),  glm::vec3(0, z, 0),
+        glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f, Light::POINT_LIGHT));
+    //LightManager::addLight(new Light(glm::vec3(0, 0, 1), glm::vec3(-50, z, 0),
+    //    glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
+   // LightManager::addLight(new Light(glm::vec3(0, 1, 0), glm::vec3(0, z, -50),
+    //    glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
     LightManager::addLight(new Light(glm::vec3(1, 1, 0), glm::vec3(-50, z, -50),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
+        glm::vec3(-1, -1, -1), att, 45.0f, Light::DIRECTIONAL));
     LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
         glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
 
@@ -395,19 +395,28 @@ int main(int argc, char **argv)
     Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
     Shader * bloomshader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
    
-
     assert(glGetError() == GL_NO_ERROR);
+    double time = glfwGetTime();
+    int frames = 0;
     do{
         hero->checkInput(window);
 
         gBuffer->pass(objs);
         //gBuffer->displayTexture(hot_key);
 
-        lProcessor->pass(gBuffer, LightManager::getLights());
-        //lProcessor->displayTexture(0);
+        lProcessor->pass(gBuffer, LightManager::getPointLights(), 
+            LightManager::getSpotLights(), LightManager::getDirectionalLights());
+        lProcessor->displayTexture(0);
 
-        blurPost->passBloom(gBuffer, lProcessor, bloomshader, shader, 2);
-        blurPost->displayTexture(0);
+        //blurPost->passBloom(gBuffer, lProcessor, bloomshader, shader, 2);
+        //blurPost->displayTexture(0);
+
+        frames++;
+        if (glfwGetTime() - time >= 1.0){
+            cout << frames << endl;
+            frames = 0;
+            time = glfwGetTime();
+        }
 
         // Swap buffers
         glfwSwapBuffers(window);

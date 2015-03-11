@@ -1,6 +1,7 @@
 #include "light.h"
 
 #include <algorithm>
+#include <iostream>
 
 # define M_PI 3.141592
 
@@ -39,15 +40,44 @@ void Light::load(const GLint posHandle, const GLint dirHandle, const GLint color
 
 float Light::lightAreaRadius(){
     float C = std::max(color.r, std::max(color.g, color.b));
+    if (fallOff.z == 0.0f){
+        if (fallOff.y == 0.0f){
+            if (fallOff.x == 0.0f){
+                return 0;
+            }
+            return 1 / fallOff.x;
+        }
+        return (-fallOff.x + 256 * C) / fallOff.y;
+    }
     return (-fallOff.y + sqrt(fallOff.y*fallOff.y - 4 * fallOff.z*(fallOff.x - 256 * C)))/(2.0*fallOff.z);
 }
 
-std::list<Light *> LightManager::lights;
+std::list<Light *> LightManager::pointLights;
+std::list<Light *> LightManager::spotLights;
+std::list<Light *> LightManager::directionalLights;
 
 void LightManager::addLight(Light * light){
-    lights.push_back(light);
+    switch (light->type){
+    case Light::POINT_LIGHT:
+        pointLights.push_back(light);
+        break;
+    case Light::SPOT_LIGHT:
+        spotLights.push_back(light);
+        break;
+    case Light::DIRECTIONAL:
+        directionalLights.push_back(light);
+        break;
+    }
 }
 
-std::list<Light *> LightManager::getLights(){
-    return lights;
+std::list<Light *> LightManager::getPointLights(){
+    return pointLights;
+}
+
+std::list<Light *> LightManager::getSpotLights(){
+    return spotLights;
+}
+
+std::list<Light *> LightManager::getDirectionalLights(){
+    return directionalLights;
 }
