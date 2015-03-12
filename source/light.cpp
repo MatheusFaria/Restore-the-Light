@@ -14,7 +14,7 @@ Light::Light()
 
 // Directional Light Constructor
 Light::Light(glm::vec3 _color, glm::vec3 _dir) 
-    : Light(color, glm::vec3(0), _dir, glm::vec3(1, 0, 0), 360.0f, DIRECTIONAL){}
+    : Light(_color, glm::vec3(0), _dir, glm::vec3(1, 0, 0), 360.0f, Light::DIRECTIONAL){}
 
 // Point Light Constructor
 Light::Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _fallOff) 

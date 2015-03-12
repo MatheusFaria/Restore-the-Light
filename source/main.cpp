@@ -91,6 +91,7 @@ void setupCams(){
 }
 
 void setupLights(){
+    /*
     float z = 7;
     glm::vec3 att = glm::vec3(0, 0.03, 0);
     LightManager::addLight(new Light(glm::vec3(1, 1, 1),  glm::vec3(0, z, 0),
@@ -107,7 +108,7 @@ void setupLights(){
     for (int i = 0; i < 15; i++){
         LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
             glm::vec3(0, -1, 0), glm::vec3(0, 1, 0.03), 45.0f, Light::SPOT_LIGHT));
-    }
+    }*/
 }
 
 void installShaders(){
@@ -157,7 +158,7 @@ void installShaders(){
     shader->loadHandle("uCompleteGlow");
     shader->loadHandle("uApplyTexture");
 
-    shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
+    shader = LoadManager::getShader("default-texture-vertex.glsl", "frag-blur.glsl");
     shader->loadHandle("aPosition");
     shader->loadHandle("uTexID");
     shader->loadHandle("uDir");
@@ -224,8 +225,6 @@ void createGaussBlurShader(){
 
 int main(int argc, char **argv)
 {
-    createGaussBlurShader();
-
     // Initialise GLFW
     if (!glfwInit())
     {
@@ -262,6 +261,7 @@ int main(int argc, char **argv)
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
 
     glEnable(GL_TEXTURE_2D);
 
@@ -276,9 +276,48 @@ int main(int argc, char **argv)
     installShaders();
     installMeshes();
 
-    int rows = 10, cols = 10;
+    int rows = 36, cols = 30;
 
-    GameMap * gamemap = new GameMap(string(rows*cols, 'c'), rows, cols);
+    stringstream mapss;
+    mapss << "cccccccccc...................."
+          << "c............................."
+          << "c............................."
+          << "c............................."
+          << "c............................."
+          << "c............................."
+          << "c.......c....................."
+          << "c.......c....................."
+          << "c.......c....................."
+          << "c.......c....................."
+          << "c.......c....................."
+          << "ccccccccccccccccc............."
+          << ".....c..........c............."
+          << ".....c..........c............."
+          << ".....c..........ccccccccc....."
+          << ".....c........................"
+          << ".....c........................"
+          << ".....c........................"
+          << ".....c........................"
+          << ".....c........................"
+          << ".....c........................"
+          << "cccccc........................"
+          << "c................ccccccccccccc"
+          << "c................c...........c"
+          << "c................c...........c"
+          << "c................c...........c"
+          << "c................c...........c"
+          << "c................c...........c"
+          << "cccccccc.........c...........c"
+          << "c................ccccccccccccc"
+          << "c......................c......"
+          << "c......................c......"
+          << "c......................c......"
+          << "c......................c......"
+          << "c......................c......"
+          << "cccccccccccccccccccccccccccccc";
+
+
+    GameMap * gamemap = new GameMap(mapss.str(), rows, cols);
     gamemap->init();
 
     hero = new Hero(gamemap, 0);
@@ -300,7 +339,7 @@ int main(int argc, char **argv)
     Render::LightProcessor * lProcessor = new Render::LightProcessor(g_width, g_height, 1);
     lProcessor->init();
 
-    Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "temp.glsl");
+    Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "frag-blur.glsl");
     Shader * bloomshader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
    
     assert(glGetError() == GL_NO_ERROR);

@@ -10,6 +10,7 @@
 #include "material.h"
 #include "virtual_camera.h"
 #include "log.h"
+#include "light.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -38,25 +39,38 @@ public:
 
         setControlMode(FPS);
         velocity = 0.3f;
+
+        light = new Light(glm::vec3(1), pos, glm::vec3(0, 0.7, 0));
+        LightManager::addLight(light);
+
+        gLight = new Light(glm::vec3(1, 1, 1), glm::vec3(0, -1, 0));
     }
 
     void drawObject(){
-        Material::SetMaterial(Material::GOLD, shader);
-        glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
+        light->pos = pos + glm::vec3(0.00001);
 
-        enableAttrArray2f("aTexCoord", "texBufObj");
+        if (!isFPS()){
+            Material::SetMaterial(Material::GOLD, shader);
+            glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
 
-        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
-        glUniform1i(shader->getHandle("uApplyTexture"), 0);
+            enableAttrArray2f("aTexCoord", "texBufObj");
 
-        loadIdentity();
+            glUniform1i(shader->getHandle("uCompleteGlow"), 1);
+            glUniform1i(shader->getHandle("uApplyTexture"), 0);
 
-        addTransformation(glm::translate(glm::mat4(1.0f), pos));
-        addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
-        bindModelMatrix("uModelMatrix");
+            loadIdentity();
+
+            addTransformation(glm::translate(glm::mat4(1.0f), pos));
+            addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
+            bindModelMatrix("uModelMatrix");
         
-        if (!isFPS())
+        
             drawElements();
+        }
+    }
+
+    float rand_float(){
+        return ((float)rand()) / ((float)RAND_MAX);
     }
 
     void checkInput(GLFWwindow * window){
@@ -65,6 +79,18 @@ public:
         }
         else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
             setControlMode(ISO);
+        }
+        else if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS){
+            setControlMode(FREE);
+        }
+        
+        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS){
+            LightManager::addLight(gLight);
+        }
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+            LightManager::addLight(new Light(glm::vec3(rand_float(), rand_float(), rand_float()),
+                pos, glm::vec3(0, 0.3, 0)));
         }
         
         if (isFPS()){
@@ -76,7 +102,7 @@ public:
     }
 
     bool isFPS(){
-        return controlMode == FPS;
+        return (controlMode == FPS || controlMode == FREE);
     }
 
     bool isISO(){
@@ -87,9 +113,13 @@ private:
     glm::vec3 pos;
     float velocity;
     int controlMode;
-    const int FPS = 0, ISO = 1, TOP = 2;
+    const int FPS = 0, 
+              ISO = 1, 
+              TOP = 2,
+              FREE = -1;
     int currentCube;
     GameMap * gameMap;
+    Light * light, *gLight;
 
     static const int FOWARD_DIR = -1;
     static const int BACKWARD_DIR = 1;
@@ -116,7 +146,7 @@ private:
         pos += CamManager::currentCam()->getViewVector()*(zoomDir*velocity);
         pos += CamManager::currentCam()->getViewVector()*(strafeDir*velocity);
 
-        if (gameMap->thereIsCube(pos)){
+        if (gameMap->thereIsCube(pos) || controlMode == FREE){
             CamManager::currentCam()->zoom(zoomDir, velocity);
             CamManager::currentCam()->strafe(strafeDir, velocity);
 
@@ -157,8 +187,8 @@ private:
         if (val == FPS){
             controlMode = FPS;
             CamManager::setCam(FPS_CAM);
-            //CamManager::currentCam()->turnOffY();
-            CamManager::currentCam()->setAngles(-180, 0);
+            CamManager::currentCam()->turnOffY();
+            CamManager::currentCam()->setAngles(-90, 0);
             CamManager::currentCam()->eye = pos;
             CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);
         }
@@ -172,6 +202,14 @@ private:
         else if (val == TOP){
             controlMode = TOP;
             CamManager::setCam(TOP_CAM);
+        }
+        else if (val == FREE){
+            controlMode = FREE;
+            CamManager::setCam(FPS_CAM);
+            CamManager::currentCam()->turnOnY();
+            CamManager::currentCam()->setAngles(-90, 0);
+            CamManager::currentCam()->eye = pos;
+            CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);
         }
         else{
             Log::error("Hero::setControlMode", "No such control mode option", "", "");

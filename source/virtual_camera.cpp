@@ -72,6 +72,10 @@ void Cam::turnOffY(){
     updateY = false;
 }
 
+void Cam::turnOnY(){
+    updateY = true;
+}
+
 std::vector<Cam *> CamManager::cameras;
 int CamManager::currentCamId = -1;
 Cam * CamManager::getCam(int id){

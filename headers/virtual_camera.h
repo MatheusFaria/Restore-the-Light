@@ -25,6 +25,7 @@ public:
     float getPhi();
     
     void turnOffY();
+    void turnOnY();
 
     glm::mat4 projectionMatrix;
     glm::vec3 eye, lookAt, upVector;

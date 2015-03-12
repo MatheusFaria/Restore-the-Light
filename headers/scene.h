@@ -27,14 +27,14 @@ typedef unsigned char Uint8;
 
 using namespace std;
 
-glm::vec3 g_light(-6, 5, -6);
-
 class GameMap : public Object3D{
 public:
     string mapLayout;
     int mapRowsSize;
     int mapColsSize;
     GLuint tex, atex;
+    vector<glm::mat4> cubesMatrices;
+
     GameMap(string _mapLayout, int rows, int cols):
     mapLayout(_mapLayout), mapRowsSize(rows), mapColsSize(cols){
         if (mapLayout.size() != mapRowsSize*mapColsSize){
@@ -55,10 +55,16 @@ public:
         tex = TextureManager::getTexture("enemy.bmp")->getTexture();
         atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
 
-        //loadIdentity();
-        //addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, -2, 0)));
-        //addTransformation(glm::rotate(glm::mat4(1.0f), 30.0f, glm::vec3(0, 0, 1)));
-        pushMatrix();
+        for (int index = 0; index < mapRowsSize*mapColsSize; index++){
+            switch (mapLayout[index]){
+            case DEFAULT_CUBE:
+                cubesMatrices.push_back(glm::translate(glm::mat4(1.0f), getCubePos(index)));
+                break;
+            case EMPTY_SPACE:
+            default:
+                break;
+            }
+        }
     }
 
     void drawObject(){
@@ -79,16 +85,8 @@ public:
         glUniform1i(shader->getHandle("uAlphaTexID"), 1);
         
         
-        for (int index = 0; index < mapRowsSize*mapColsSize; index++){
-            switch (mapLayout[index]){
-            case DEFAULT_CUBE:
-                addTransformation(glm::translate(glm::mat4(1.0f), getCubePos(index)));
-                break;
-            case EMPTY_SPACE:
-            default:
-                break;
-            }
-
+        for (int index = 0; index < cubesMatrices.size(); index++){
+            addTransformation(cubesMatrices[index]);
             bindModelMatrix("uModelMatrix");
             drawElements();
             reloadTopMatrix();
@@ -96,10 +94,13 @@ public:
     }
 
     glm::vec3 getCubePos(int cubePos){
-        float x = -CUBE_SIDE*(cubePos % mapRowsSize);
-        float z = -CUBE_SIDE*(cubePos / mapRowsSize);
+        int i = cubePos / mapColsSize;
+        int j = cubePos % mapColsSize;
+
+        float x = -CUBE_SIDE*i;
+        float z = -CUBE_SIDE*j;
         float y = 0.2;
-        if (((int)(cubePos % mapRowsSize + cubePos / mapRowsSize)) % 2)
+        if ((i + j) % 2)
             y *= -1;
 
         return glm::vec3(x, y, z);
@@ -134,9 +135,13 @@ public:
         }
 
         if (x >= 0 && z >= 0 && x < mapRowsSize && z < mapColsSize){
-            return thereIsCube(x*mapRowsSize + z);
+            return thereIsCube(getMapPos(x, z));
         }
         return false;
+    }
+
+    int getMapPos(int i, int j){
+        return i*mapColsSize + j;
     }
 
 private:
@@ -184,36 +189,6 @@ public:
     float rotAxe;
     int currentCube;
     GameMap * gameMap;
-};
-
-class LightObject : public Object3D{
-public:
-    LightObject(){}
-
-    void init(){
-        mesh = LoadManager::getMesh("sphere.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-    }
-
-    void drawObject(){
-        glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-
-        Material::SetMaterial(Material::EMERALD, shader);
-        loadIdentity();
-
-        addTransformation(glm::translate(glm::mat4(1.0f), g_light));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
 };
 
 class Enemy : public Object3D{
@@ -356,50 +331,6 @@ private:
             direction *= -1;
         }
     }
-};
-
-class Cube : public Object3D{
-public:
-    Cube(){}
-
-    void init(){
-        mesh = LoadManager::getMesh("sphere-tex.obj");
-
-        loadVertexBuffer("posBufObj");
-        loadNormalBuffer("norBufObj");
-        loadTextureBuffer("texBufObj");
-        loadElementBuffer();
-
-        shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-
-        Texture * tex = new Texture(LoadManager::getImage("bloomtex.bmp"));
-        tex->load();
-        TextureManager::addTexture("cubetex", tex);
-    }
-
-    void drawObject(){
-        enableAttrArray2f("aTexCoord", "texBufObj");
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::getTexture("cubetex")->getTexture());
-        glUniform1i(shader->getHandle("uTextureID"), 0);
-        
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-        glUniform3f(shader->getHandle("uEye"), CamManager::currentCam()->eye.x,
-            CamManager::currentCam()->eye.y,
-            CamManager::currentCam()->eye.z);
-
-        Material::SetMaterial(Material::EMERALD, shader);
-        loadIdentity();
-
-        rot += 0.05f;
-        addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)));
-        addTransformation(glm::rotate(glm::mat4(1.0f), rot, glm::vec3(0, 1, 0)));
-        bindModelMatrix("uModelMatrix");
-
-        drawElements();
-    }
-    float rot = 0;
 };
 
 #endif
