@@ -26,7 +26,7 @@
 #include "scene.h"
 #include "hero.h"
 
-#define GAUSS_KERNEL_SIZE 35
+#define GAUSS_KERNEL_SIZE 23
 
 GLFWwindow* window;
 using namespace std;
@@ -172,6 +172,11 @@ void installShaders(){
     shader->loadHandle("aPosition");
     shader->loadHandle("uTex1ID");
     shader->loadHandle("uTex2ID");
+
+    shader = LoadManager::getShader("default-texture-vertex.glsl", "sum-two-textures-fragment.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uTex1ID");
+    shader->loadHandle("uTex2ID");
 }
 
 void installMeshes(){
@@ -186,10 +191,10 @@ void createGaussBlurShader(){
     string eol = "\n";
 
     shader << 
-        "#version 120" << eol << 
+        "#version 120" << eol << eol <<
         "uniform sampler2D uTexID;" << eol <<
-        "uniform vec2 uDir;" << eol <<
-        "varying vec2 vTexCoord;" << eol <<
+        "uniform vec2 uDir;" << eol << eol <<
+        "varying vec2 vTexCoord;" << eol << eol <<
 
         "vec3 gaussianBlur2Pass(sampler2D texID, vec2 texel, float resolution, float radius, vec2 dir){" << eol <<
         "    vec4 sum = vec4(0.0);" << eol <<
@@ -209,7 +214,7 @@ void createGaussBlurShader(){
         "    }" << eol <<
 
         "    return sum;" << eol <<
-        "}" << eol <<
+        "}" << eol << eol <<
 
         "void main()" << eol <<
         "{" << eol <<
@@ -217,7 +222,7 @@ void createGaussBlurShader(){
         "}" << eol;
 
     ofstream file;
-    file.open("shaders/temp.glsl");
+    file.open("shaders/frag-blur.glsl");
     file << shader.str();
     file.close();
 
@@ -225,6 +230,7 @@ void createGaussBlurShader(){
 
 int main(int argc, char **argv)
 {
+    createGaussBlurShader();
     // Initialise GLFW
     if (!glfwInit())
     {
@@ -356,10 +362,10 @@ int main(int argc, char **argv)
         //lProcessor->displayTexture(0);
 
         alphaPost->passMultiplyTextures(gBuffer->getOutFBO()->getTexture(1),
-            lProcessor->getOutFBO()->getTexture(0),
+            gBuffer->getOutFBO()->getTexture(0),
             LoadManager::getShader("default-texture-vertex.glsl", "multply-two-textures-fragment.glsl"));
 
-        blurPost->passBloom(alphaPost, lProcessor, bloomshader, shader, 2);
+        blurPost->passBloom(alphaPost, lProcessor, bloomshader, shader, 1);
         blurPost->displayTexture(0);
 
         frames++;
