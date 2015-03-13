@@ -40,7 +40,7 @@ public:
         setControlMode(FPS);
         velocity = 0.3f;
 
-        light = new Light(glm::vec3(1), pos, glm::vec3(0, -1, 0), glm::vec3(0, 0.2, 0), 45.0f);
+        light = new Light(glm::vec3(1), pos, glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f);
         LightManager::addLight(light);
 
         gLight = new Light(glm::vec3(1, 1, 1), glm::vec3(0, -1, 0));
@@ -88,7 +88,7 @@ public:
             LightManager::addLight(gLight);
         }
 
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
             LightManager::addLight(new Light(glm::vec3(rand_float(), rand_float(), rand_float()),
                 pos, glm::vec3(0, 0.6, 0)));
         }

@@ -80,8 +80,8 @@ namespace Render{
 
         void passBlur(Processor * processor, int cycles, Shader * blurShader);
         void passMultiplyTextures(GLuint tex1, GLuint tex2, Shader * shader);
-        void passBloom(Processor * processorAlpha, Processor * processorDiffuse,
-            Shader * bloomShader, Shader * blurShader, int cycles);
+        void passBloom(Processor * processorBlur, Processor * processorDiffuse,
+            Shader * bloomShader);
     };
 }
 

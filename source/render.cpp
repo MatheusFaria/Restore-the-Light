@@ -657,10 +657,8 @@ namespace Render{
         glUseProgram(0);
     }
 
-    void PostProcessor::passBloom(Processor * processorAlpha, Processor * processorDiffuse, 
-        Shader * bloomShader, Shader * blurShader, int cycles){
-        passBlur(processorAlpha, cycles, blurShader);
-
+    void PostProcessor::passBloom(Processor * processorBlur, Processor * processorDiffuse, 
+        Shader * bloomShader){
         glViewport(0, 0, width, height);
 
         glUseProgram(bloomShader->getId());
@@ -681,7 +679,7 @@ namespace Render{
         glUniform1i(bloomShader->getHandle("uTexID"), 0);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, outFBO->getTexture(0));
+        glBindTexture(GL_TEXTURE_2D, processorBlur->getOutFBO()->getTexture(0));
         glUniform1i(bloomShader->getHandle("uBlurTexID"), 1);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

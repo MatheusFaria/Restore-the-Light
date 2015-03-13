@@ -26,7 +26,7 @@
 #include "scene.h"
 #include "hero.h"
 
-#define GAUSS_KERNEL_SIZE 23
+#define GAUSS_KERNEL_SIZE 35
 
 GLFWwindow* window;
 using namespace std;
@@ -336,11 +336,17 @@ int main(int argc, char **argv)
     vector<Object3D *> objs;
     objs.push_back(gamemap);
 
-    Render::PostProcessor * blurPost = new Render::PostProcessor(g_width, g_height, 1, 2);
+    Render::PostProcessor * blurPost = new Render::PostProcessor(g_width/4, g_height/4, 1, 2);
     blurPost->init();
+
+    Render::PostProcessor * bloomPost = new Render::PostProcessor(g_width, g_height, 1, 2);
+    bloomPost->init();
 
     Render::PostProcessor * alphaPost = new Render::PostProcessor(g_width, g_height, 1, 1);
     alphaPost->init();
+
+    Render::PostProcessor * alphaPost2 = new Render::PostProcessor(g_width, g_height, 1, 1);
+    alphaPost2->init();
 
     Render::LightProcessor * lProcessor = new Render::LightProcessor(g_width, g_height, 1);
     lProcessor->init();
@@ -365,8 +371,15 @@ int main(int argc, char **argv)
             gBuffer->getOutFBO()->getTexture(0),
             LoadManager::getShader("default-texture-vertex.glsl", "multply-two-textures-fragment.glsl"));
 
-        blurPost->passBloom(alphaPost, lProcessor, bloomshader, shader, 1);
-        blurPost->displayTexture(0);
+        alphaPost2->passMultiplyTextures(alphaPost->getOutFBO()->getTexture(0),
+            lProcessor->getOutFBO()->getTexture(0),
+            LoadManager::getShader("default-texture-vertex.glsl", "sum-two-textures-fragment.glsl"));
+        //alphaPost2->displayTexture(0);
+
+        blurPost->passBlur(alphaPost2, 2, shader);
+
+        bloomPost->passBloom(blurPost, lProcessor, bloomshader);
+        bloomPost->displayTexture(0);
 
         frames++;
         if (glfwGetTime() - time >= 1.0){

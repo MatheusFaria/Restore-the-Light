@@ -68,7 +68,7 @@ public:
     }
 
     void drawObject(){
-        Material::SetMaterial(Material::SILVER, shader, false);
+        Material::SetMaterial(Material::FLAT_GREY, shader, false);
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
 
         enableAttrArray2f("aTexCoord", "texBufObj");
