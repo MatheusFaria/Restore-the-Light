@@ -244,7 +244,7 @@ namespace Render{
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
 
-        glUniform2f(pointShader->getHandle("uScreenSize"), 600, 600);
+        glUniform2f(pointShader->getHandle("uScreenSize"), width, height);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
@@ -347,7 +347,7 @@ namespace Render{
             CamManager::currentCam()->eye.y,
             CamManager::currentCam()->eye.z);
 
-        glUniform2f(spotShader->getHandle("uScreenSize"), 600, 600);
+        glUniform2f(spotShader->getHandle("uScreenSize"), width, height);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(0));
@@ -455,7 +455,7 @@ namespace Render{
         glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(4));
         glUniform1i(directionalShader->getHandle("uSpecularID"), 3);
 
-        glUniform2f(directionalShader->getHandle("uScreenSize"), 600, 600);
+        glUniform2f(directionalShader->getHandle("uScreenSize"), width, height);
 
         Light * light;
         for (std::list<Light *>::iterator it = lights.begin(); it != lights.end(); it++){
@@ -485,7 +485,7 @@ namespace Render{
         glBindTexture(GL_TEXTURE_2D, processor->getOutFBO()->getTexture(5));
         glUniform1i(ambientShader->getHandle("uAmbientID"), 0);
 
-        glUniform2f(ambientShader->getHandle("uScreenSize"), 600, 600);
+        glUniform2f(ambientShader->getHandle("uScreenSize"), width, height);
 
         glUniformMatrix4fv(ambientShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
