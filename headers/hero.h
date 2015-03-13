@@ -35,10 +35,12 @@ public:
         shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
 
         pos = gameMap->getCubePos(currentCube);
-        pos.y += 2;
+        pos.y += defaultHeight;
+        initialPos = pos;
 
         setControlMode(FPS);
         velocity = 0.3f;
+        floatVeloctiy = 0.008f;
 
         light = new Light(glm::vec3(1), pos, glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f);
         LightManager::addLight(light);
@@ -97,6 +99,7 @@ public:
             FPSControl(window);
         }
         else if (isISO()){
+            updateFloatMovement();
             ISOControl(window);
         }
     }
@@ -110,21 +113,30 @@ public:
     }
 
 private:
-    glm::vec3 pos;
-    float velocity;
-    int controlMode;
-    const int FPS = 0, 
-              ISO = 1, 
-              TOP = 2,
-              FREE = -1;
-    int currentCube;
-    GameMap * gameMap;
-    Light * light, *gLight;
-
     static const int FOWARD_DIR = -1;
     static const int BACKWARD_DIR = 1;
+    static const int UP_DIR = 1;
+    static const int DOWN_DIR = -1;
     static const int LEFT_DIR = 1;
     static const int RIGHT_DIR = -1;
+
+    glm::vec3 pos, initialPos;
+    int currentCube;
+
+    float velocity;
+    float floatVeloctiy;
+
+    int floatDirection = UP_DIR;
+    float defaultHeight = 2, heightOffset = 0.4;
+
+    int controlMode;
+    const int FPS = 0,
+        ISO = 1,
+        TOP = 2,
+        FREE = -1;
+
+    GameMap * gameMap;
+    Light * light, *gLight;
 
     void FPSControl(GLFWwindow * window){
         glm::vec3 oldPos = pos;
@@ -179,15 +191,30 @@ private:
             pos = oldPos;
         }
 
-        CamManager::currentCam()->lookAt = pos;
-        CamManager::currentCam()->eye = glm::vec3(pos.x + 5, pos.y + 2, pos.z + 4);
+        CamManager::currentCam()->lookAt = glm::vec3(pos.x, initialPos.y, pos.z);
+        CamManager::currentCam()->eye = glm::vec3(pos.x + 5, initialPos.y + 2, pos.z + 4);
+    }
+
+    void updateFloatMovement(){
+        pos.y += floatDirection*floatVeloctiy;
+
+        if (pos.y >= initialPos.y + heightOffset){
+            floatDirection = DOWN_DIR;
+        }
+        else if (pos.y <= initialPos.y - heightOffset){
+            floatDirection = UP_DIR;
+        }
     }
 
     void setControlMode(int val){
-        if (val == FPS){
+        if (val == FPS || val == FREE){
             controlMode = FPS;
+            pos = glm::vec3(pos.x, initialPos.y, pos.z);
             CamManager::setCam(FPS_CAM);
-            CamManager::currentCam()->turnOffY();
+            if (val == FPS)
+                CamManager::currentCam()->turnOffY();
+            else
+                CamManager::currentCam()->turnOnY();
             CamManager::currentCam()->setAngles(-90, 0);
             CamManager::currentCam()->eye = pos;
             CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);
@@ -202,14 +229,6 @@ private:
         else if (val == TOP){
             controlMode = TOP;
             CamManager::setCam(TOP_CAM);
-        }
-        else if (val == FREE){
-            controlMode = FREE;
-            CamManager::setCam(FPS_CAM);
-            CamManager::currentCam()->turnOnY();
-            CamManager::currentCam()->setAngles(-90, 0);
-            CamManager::currentCam()->eye = pos;
-            CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);
         }
         else{
             Log::error("Hero::setControlMode", "No such control mode option", "", "");
