@@ -1,14 +1,12 @@
 #include <iostream>
-#include <cassert>
 #include <vector>
-#include <ctime>
 #include <sstream>
 #include <fstream>
 
 #include "GaussianBlur.h"
 #include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp" //perspective, trans etc
-#include "glm/gtc/type_ptr.hpp" //value_ptr
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #include "GLSL.h"
 #include "mesh.h"
@@ -22,21 +20,22 @@
 #include "image.h"
 #include "fbo.h"
 #include "render.h"
+#include "globals.h"
 
 #include "scene.h"
 #include "hero.h"
 
-#define GAUSS_KERNEL_SIZE 35
-
-GLFWwindow* window;
 using namespace std;
 
-int g_width;
-int g_height;
 bool g_lock_mouse = true;
 bool g_first_mouse_movement = true;
 int hot_key = 0;
 
+Render::GeometryProcessor *gBuffer;
+Render::LightProcessor *lightProcessor;
+Render::PostProcessor *alphaPost, *bloomPost, *blurPost;
+
+GameMap * gamemap;
 Hero * hero;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -54,14 +53,14 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
         if (hero->isFPS()){
             if (g_first_mouse_movement){
                 g_first_mouse_movement = false;
-                glfwSetCursorPos(window, g_width / 2, g_height / 2);
+                glfwSetCursorPos(window, Global::screenWidth / 2, Global::screenHeight / 2);
                 return;
             }
 
             float phi = CamManager::currentCam()->getPhi(), 
                 theta = CamManager::currentCam()->getTheta();
-            phi += (g_height / 2 - ypos) * 360 / g_height;
-            theta -= (g_width / 2 - xpos) * 360 / g_width;
+            phi += (Global::screenHeight / 2 - ypos) * 360 / Global::screenHeight;
+            theta -= (Global::screenWidth / 2 - xpos) * 360 / Global::screenWidth;
 
             if (phi > 80)
                 phi = 80;
@@ -71,7 +70,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
             CamManager::currentCam()->setAngles(theta, phi);
 
             if (g_lock_mouse){
-                glfwSetCursorPos(window, g_width / 2, g_height / 2);
+                glfwSetCursorPos(window, Global::screenWidth / 2, Global::screenHeight / 2);
             }
         }
     }
@@ -79,7 +78,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
 void setupCams(){
     int numberCameras = 3;
-    glm::mat4 Projection = glm::perspective(90.0f, (float)g_width / g_height, 0.1f, 100.f);
+    glm::mat4 Projection = glm::perspective(90.0f, (float)Global::screenWidth / Global::screenHeight, 0.1f, 100.f);
 
     for (int i = 0; i < numberCameras; i++){
         Cam * mainCam = new Cam(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
@@ -91,24 +90,6 @@ void setupCams(){
 }
 
 void setupLights(){
-    /*
-    float z = 7;
-    glm::vec3 att = glm::vec3(0, 0.03, 0);
-    LightManager::addLight(new Light(glm::vec3(1, 1, 1),  glm::vec3(0, z, 0),
-        glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f, Light::POINT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-50, z, 0),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(0, z, -50),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-50, z, -50),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::DIRECTIONAL));
-    LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
-        glm::vec3(0, -1, 0), att, 45.0f, Light::SPOT_LIGHT));
-
-    for (int i = 0; i < 15; i++){
-        LightManager::addLight(new Light(glm::vec3(1, 1, 1), glm::vec3(-25, z, -25),
-            glm::vec3(0, -1, 0), glm::vec3(0, 1, 0.03), 45.0f, Light::SPOT_LIGHT));
-    }*/
 }
 
 void installShaders(){
@@ -163,29 +144,24 @@ void installShaders(){
     shader->loadHandle("uTexID");
     shader->loadHandle("uDir");
 
-    shader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uTexID");
-    shader->loadHandle("uBlurTexID");
-
-    shader = LoadManager::getShader("default-texture-vertex.glsl", "multply-two-textures-fragment.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uTex1ID");
-    shader->loadHandle("uTex2ID");
-
     shader = LoadManager::getShader("default-texture-vertex.glsl", "sum-two-textures-fragment.glsl");
     shader->loadHandle("aPosition");
     shader->loadHandle("uTex1ID");
     shader->loadHandle("uTex2ID");
+
+    shader = LoadManager::getShader("default-texture-vertex.glsl", "get-glow-spots-fragment.glsl");
+    shader->loadHandle("aPosition");
+    shader->loadHandle("uTex1ID");
+    shader->loadHandle("uTex2ID");
+    shader->loadHandle("uTex3ID");
 }
 
 void installMeshes(){
     LoadManager::getMesh("sphere.obj");
 }
 
-
 void createGaussBlurShader(){
-    vector<float> kernel = GetAppropriateSeparableGauss(GAUSS_KERNEL_SIZE);
+    vector<float> kernel = GetAppropriateSeparableGauss(Global::gaussKernelSize);
     
     std::stringstream shader;
     string eol = "\n";
@@ -228,9 +204,86 @@ void createGaussBlurShader(){
 
 }
 
+void setupWorld(){
+    createGaussBlurShader();
+
+    setupCams();
+    setupLights();
+
+    installShaders();
+    installMeshes();
+}
+
+void setupGame(){
+    int rows = 36, cols = 30;
+
+    stringstream mapss;
+    mapss 
+        << "cccccccccc...................."
+        << "c............................."
+        << "c............................."
+        << "c............................."
+        << "c............................."
+        << "c............................."
+        << "c.......c....................."
+        << "c.......c....................."
+        << "c.......c....................."
+        << "c.......c....................."
+        << "c.......c....................."
+        << "ccccccccccccccccc............."
+        << ".....c..........c............."
+        << ".....c..........c............."
+        << ".....c..........ccccccccc....."
+        << ".....c........................"
+        << ".....c........................"
+        << ".....c........................"
+        << ".....c........................"
+        << ".....c........................"
+        << ".....c........................"
+        << "cccccc........................"
+        << "c................ccccccccccccc"
+        << "c................c...........c"
+        << "c................c...........c"
+        << "c................c...........c"
+        << "c................c...........c"
+        << "c................c...........c"
+        << "cccccccc.........c...........c"
+        << "c................ccccccccccccc"
+        << "c......................c......"
+        << "c......................c......"
+        << "c......................c......"
+        << "c......................c......"
+        << "c......................c......"
+        << "cccccccccccccccccccccccccccccc";
+
+
+    gamemap = new GameMap(mapss.str(), rows, cols);
+    gamemap->init();
+
+    hero = new Hero(gamemap, 0);
+    hero->init();
+    gamemap->addChild(hero);
+}
+
+void setupRenderEngine(){
+    lightProcessor = new Render::LightProcessor(Global::screenWidth, Global::screenHeight, 1);
+    lightProcessor->init();
+
+    gBuffer = new Render::GeometryProcessor(Global::screenWidth, Global::screenHeight, 6, glm::vec4(0, 0, 0, 1));
+    gBuffer->init();
+
+    blurPost = new Render::PostProcessor(Global::screenWidth / 4, Global::screenHeight / 4, 1, 2);
+    blurPost->init();
+
+    bloomPost = new Render::PostProcessor(Global::screenWidth, Global::screenHeight, 1, 2);
+    bloomPost->init();
+
+    alphaPost = new Render::PostProcessor(Global::screenWidth, Global::screenHeight, 1, 1);
+    alphaPost->init();
+}
+
 int main(int argc, char **argv)
 {
-    createGaussBlurShader();
     // Initialise GLFW
     if (!glfwInit())
     {
@@ -244,142 +297,67 @@ int main(int argc, char **argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
     // Open a window and create its OpenGL context
-    g_width = 600;
-    g_height = 600;
-    window = glfwCreateWindow(g_width, g_height, "P3 - shading", NULL, NULL);
-    if (window == NULL){
+    Global::window = glfwCreateWindow(Global::screenWidth, Global::screenHeight, Global::gameName.c_str(), NULL, NULL);
+    if (Global::window == NULL){
         fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwMakeContextCurrent(Global::window);
+    glfwSetKeyCallback(Global::window, key_callback);
+    glfwSetCursorPosCallback(Global::window, cursor_position_callback);
+    glfwSetInputMode(Global::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // Initialize glad
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Unable to initialize glad");
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(Global::window);
         glfwTerminate();
         return -1;
     }
 
     // Ensure we can capture the escape key being pressed below
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
+    glfwSetInputMode(Global::window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(Global::window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
 
     glEnable(GL_TEXTURE_2D);
 
-    // Set the background color
-    glClearColor(0.4f, 0.4f, 0.8f, 1.0f);
-    glPointSize(18);
-
-    GLSL::checkVersion();
-
-    setupCams();
-    setupLights();
-    installShaders();
-    installMeshes();
-
-    int rows = 36, cols = 30;
-
-    stringstream mapss;
-    mapss << "cccccccccc...................."
-          << "c............................."
-          << "c............................."
-          << "c............................."
-          << "c............................."
-          << "c............................."
-          << "c.......c....................."
-          << "c.......c....................."
-          << "c.......c....................."
-          << "c.......c....................."
-          << "c.......c....................."
-          << "ccccccccccccccccc............."
-          << ".....c..........c............."
-          << ".....c..........c............."
-          << ".....c..........ccccccccc....."
-          << ".....c........................"
-          << ".....c........................"
-          << ".....c........................"
-          << ".....c........................"
-          << ".....c........................"
-          << ".....c........................"
-          << "cccccc........................"
-          << "c................ccccccccccccc"
-          << "c................c...........c"
-          << "c................c...........c"
-          << "c................c...........c"
-          << "c................c...........c"
-          << "c................c...........c"
-          << "cccccccc.........c...........c"
-          << "c................ccccccccccccc"
-          << "c......................c......"
-          << "c......................c......"
-          << "c......................c......"
-          << "c......................c......"
-          << "c......................c......"
-          << "cccccccccccccccccccccccccccccc";
-
-
-    GameMap * gamemap = new GameMap(mapss.str(), rows, cols);
-    gamemap->init();
-
-    hero = new Hero(gamemap, 0);
-    hero->init();
-    gamemap->addChild(hero);
-    
-    Render::GeometryProcessor * gBuffer = new Render::GeometryProcessor(g_width, g_height, 6, glm::vec4(0,0,0,1));
-    gBuffer->init();
+    setupRenderEngine();
+    setupWorld();
+    setupGame();
 
     vector<Object3D *> objs;
     objs.push_back(gamemap);
-
-    Render::PostProcessor * blurPost = new Render::PostProcessor(g_width/4, g_height/4, 1, 2);
-    blurPost->init();
-
-    Render::PostProcessor * bloomPost = new Render::PostProcessor(g_width, g_height, 1, 2);
-    bloomPost->init();
-
-    Render::PostProcessor * alphaPost = new Render::PostProcessor(g_width, g_height, 1, 1);
-    alphaPost->init();
-
-    Render::PostProcessor * alphaPost2 = new Render::PostProcessor(g_width, g_height, 1, 1);
-    alphaPost2->init();
-
-    Render::LightProcessor * lProcessor = new Render::LightProcessor(g_width, g_height, 1);
-    lProcessor->init();
-
-    Shader * shader = LoadManager::getShader("default-texture-vertex.glsl", "frag-blur.glsl");
-    Shader * bloomshader = LoadManager::getShader("default-texture-vertex.glsl", "frag-glow.glsl");
    
     assert(glGetError() == GL_NO_ERROR);
+
+
     double time = glfwGetTime();
     int frames = 0;
     do{
-        hero->checkInput(window);
+        hero->checkInput(Global::window);
 
         gBuffer->pass(objs);
-        //gBuffer->displayTexture(hot_key);
 
-        lProcessor->pass(gBuffer, LightManager::getPointLights(), 
+        lightProcessor->pass(gBuffer, LightManager::getPointLights(), 
             LightManager::getSpotLights(), LightManager::getDirectionalLights());
-        //lProcessor->displayTexture(0);
 
-        alphaPost->passMultiplyTextures(gBuffer->getOutFBO()->getTexture(1),
-            gBuffer->getOutFBO()->getTexture(0),
-            LoadManager::getShader("default-texture-vertex.glsl", "multply-two-textures-fragment.glsl"));
+        alphaPost->passTernaryTextureOp(
+            gBuffer->getOutFBO()->getTexture(1),
+            gBuffer->getOutFBO()->getTexture(0), 
+            lightProcessor->getOutFBO()->getTexture(0),
+            LoadManager::getShader("default-texture-vertex.glsl", "get-glow-spots-fragment.glsl"));
 
-        alphaPost2->passMultiplyTextures(alphaPost->getOutFBO()->getTexture(0),
-            lProcessor->getOutFBO()->getTexture(0),
+        blurPost->passBlur(alphaPost, 2,
+            LoadManager::getShader("default-texture-vertex.glsl", "frag-blur.glsl"));
+
+        bloomPost->passBinaryTextureOp(
+            blurPost->getOutFBO()->getTexture(0), 
+            lightProcessor->getOutFBO()->getTexture(0), 
             LoadManager::getShader("default-texture-vertex.glsl", "sum-two-textures-fragment.glsl"));
-        //alphaPost2->displayTexture(0);
-
-        blurPost->passBlur(alphaPost2, 2, shader);
-
-        bloomPost->passBloom(blurPost, lProcessor, bloomshader);
         bloomPost->displayTexture(0);
+
+
 
         frames++;
         if (glfwGetTime() - time >= 1.0){
@@ -389,14 +367,14 @@ int main(int argc, char **argv)
         }
 
         // Swap buffers
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(Global::window);
         glfwPollEvents();
 
     } // Check if the ESC key was pressed or the window was closed
-    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-    glfwWindowShouldClose(window) == 0);
+    while (glfwGetKey(Global::window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+    glfwWindowShouldClose(Global::window) == 0);
 
-    // Close OpenGL window and terminate GLFW
+    // Close OpenGL Global::window and terminate GLFW
     glfwTerminate();
 
     return 0;

@@ -79,9 +79,10 @@ namespace Render{
         PostProcessor(int _width, int _height, int _nTextures, int _nFBOs);
 
         void passBlur(Processor * processor, int cycles, Shader * blurShader);
-        void passMultiplyTextures(GLuint tex1, GLuint tex2, Shader * shader);
-        void passBloom(Processor * processorBlur, Processor * processorDiffuse,
-            Shader * bloomShader);
+
+        void passUnaryTextureOp(GLuint tex1, Shader * op);
+        void passBinaryTextureOp(GLuint tex1, GLuint tex2, Shader * op);
+        void passTernaryTextureOp(GLuint tex1, GLuint tex2, GLuint tex3, Shader * op);
     };
 }
 

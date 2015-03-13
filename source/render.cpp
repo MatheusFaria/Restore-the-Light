@@ -620,18 +620,17 @@ namespace Render{
         glUseProgram(0);
     }
 
-
-    void PostProcessor::passMultiplyTextures(GLuint tex1, GLuint tex2, Shader * shader){
+    void PostProcessor::passUnaryTextureOp(GLuint tex1, Shader * op){
         glViewport(0, 0, width, height);
 
-        glUseProgram(shader->getId());
+        glUseProgram(op->getId());
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
-        glEnableVertexAttribArray(shader->getHandle("aPosition"));
-        glVertexAttribPointer(shader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(op->getHandle("aPosition"));
+        glVertexAttribPointer(op->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         fbos[0]->enable();
 
@@ -639,55 +638,90 @@ namespace Render{
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex1);
-        glUniform1i(shader->getHandle("uTex1ID"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, tex2);
-        glUniform1i(shader->getHandle("uTex2ID"), 1);
+        glUniform1i(op->getHandle("uTex1ID"), 0);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         fbos[0]->disable();
         outFBO = fbos[0];
 
-        glDisableVertexAttribArray(shader->getHandle("aPosition"));
+        glDisableVertexAttribArray(op->getHandle("aPosition"));
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glUseProgram(0);
     }
 
-    void PostProcessor::passBloom(Processor * processorBlur, Processor * processorDiffuse, 
-        Shader * bloomShader){
+    void PostProcessor::passBinaryTextureOp(GLuint tex1, GLuint tex2, Shader * op){
         glViewport(0, 0, width, height);
 
-        glUseProgram(bloomShader->getId());
+        glUseProgram(op->getId());
         glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
-        glEnableVertexAttribArray(bloomShader->getHandle("aPosition"));
-        glVertexAttribPointer(bloomShader->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(op->getHandle("aPosition"));
+        glVertexAttribPointer(op->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         fbos[0]->enable();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, processorDiffuse->getOutFBO()->getTexture(0));
-        glUniform1i(bloomShader->getHandle("uTexID"), 0);
+        glBindTexture(GL_TEXTURE_2D, tex1);
+        glUniform1i(op->getHandle("uTex1ID"), 0);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, processorBlur->getOutFBO()->getTexture(0));
-        glUniform1i(bloomShader->getHandle("uBlurTexID"), 1);
+        glBindTexture(GL_TEXTURE_2D, tex2);
+        glUniform1i(op->getHandle("uTex2ID"), 1);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         fbos[0]->disable();
         outFBO = fbos[0];
 
-        glDisableVertexAttribArray(bloomShader->getHandle("aPosition"));
+        glDisableVertexAttribArray(op->getHandle("aPosition"));
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glUseProgram(0);
+    }
+
+    void PostProcessor::passTernaryTextureOp(GLuint tex1, GLuint tex2, GLuint tex3, Shader * op){
+        glViewport(0, 0, width, height);
+
+        glUseProgram(op->getId());
+        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuf);
+        glEnableVertexAttribArray(op->getHandle("aPosition"));
+        glVertexAttribPointer(op->getHandle("aPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+        fbos[0]->enable();
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex1);
+        glUniform1i(op->getHandle("uTex1ID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tex2);
+        glUniform1i(op->getHandle("uTex2ID"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, tex3);
+        glUniform1i(op->getHandle("uTex3ID"), 2);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        fbos[0]->disable();
+        outFBO = fbos[0];
+
+        glDisableVertexAttribArray(op->getHandle("aPosition"));
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
