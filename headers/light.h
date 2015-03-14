@@ -39,6 +39,7 @@ public:
 class LightManager{
 public:
     static void addLight(Light * light);
+    static void removeLight(Light * light);
 
     static std::list<Light *> getPointLights();
     static std::list<Light *> getSpotLights();

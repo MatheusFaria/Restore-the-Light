@@ -22,7 +22,7 @@
 #include "render.h"
 #include "globals.h"
 
-#include "scene.h"
+#include "game_map.h"
 #include "hero.h"
 
 using namespace std;
@@ -332,7 +332,7 @@ void setupGame(){
 
     hero = new Hero(gamemap, 0);
     hero->init();
-    gamemap->addChild(hero);
+    gamemap->addChild(hero); 
 }
 
 void setupRenderEngine(){

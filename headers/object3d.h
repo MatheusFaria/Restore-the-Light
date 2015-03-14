@@ -34,6 +34,7 @@ public:
     void bindUniformMatrix4f(const GLint handle, glm::mat4 matrix);
     
     void addChild(Object3D * child);
+    void removeChild(Object3D * child);
     void setParent(Object3D * _parent);
 
     Mesh * getMesh();

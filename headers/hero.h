@@ -16,7 +16,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#include "scene.h"
+#include "game_map.h"
+#include "light_shot.h"
 
 class Hero : public Object3D{
 public:
@@ -41,6 +42,8 @@ public:
         setControlMode(FPS);
         velocity = 0.3f;
         floatVeloctiy = 0.008f;
+        shotTime = 0;
+        lastDir = glm::vec3(0, 0, -1);
 
         light = new Light(glm::vec3(1), pos, glm::vec3(0, -1, 0), glm::vec3(0, 0.3, 0), 45.0f);
         LightManager::addLight(light);
@@ -116,8 +119,11 @@ public:
                 pos, glm::vec3(0, 0.6, 0)));
         }
 
-        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE){
-            lightShot();
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+            if (glfwGetTime() - shotTime >= shotCoolDown){
+                shotTime = glfwGetTime();
+                lightShot();
+            }
         }
         
         if (isFPS()){
@@ -145,7 +151,7 @@ private:
     static const int LEFT_DIR = 1;
     static const int RIGHT_DIR = -1;
 
-    glm::vec3 pos, initialPos;
+    glm::vec3 pos, initialPos, lastDir;
     int currentCube;
 
     float velocity;
@@ -153,6 +159,8 @@ private:
 
     int floatDirection = UP_DIR;
     float defaultHeight = 2, heightOffset = 0.4;
+
+    double shotCoolDown = 2.0, shotTime;
 
     int controlMode;
     const int FPS = 0,
@@ -199,16 +207,20 @@ private:
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
             dir += glm::vec3(0, 0, -1);
+            lastDir = dir;
         }
         else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
             dir += glm::vec3(0, 0, 1);
+            lastDir = dir;
         }
 
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
             dir += glm::vec3(-1, 0, 0);
+            lastDir = dir;
         }
         else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
             dir += glm::vec3(1, 0, 0);
+            lastDir = dir;
         }
         pos += dir*velocity;
 
@@ -264,7 +276,18 @@ private:
     }
 
     void lightShot(){
+        glm::vec3 dir;
+        if (isFPS()){
+            dir = CamManager::currentCam()->getViewVector();
+            dir = -dir;
+        }
+        else{
+            dir = lastDir;
+        }
+        LightShot * l = new LightShot(pos, dir, 0.07, 10);
+        l->init();
 
+        gameMap->addChild(l);
     }
 };
 

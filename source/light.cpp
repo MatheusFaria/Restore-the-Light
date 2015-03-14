@@ -71,6 +71,35 @@ void LightManager::addLight(Light * light){
     }
 }
 
+void LightManager::removeLight(Light * light){
+    switch (light->type){
+    case Light::POINT_LIGHT:
+        for (std::list<Light *>::iterator i = pointLights.begin(); i != pointLights.end(); i++){
+            if ((*i) == light){
+                pointLights.erase(i);
+                break;
+            }
+        }
+        break;
+    case Light::SPOT_LIGHT:
+        for (std::list<Light *>::iterator i = spotLights.begin(); i != spotLights.end(); i++){
+            if ((*i) == light){
+                spotLights.erase(i);
+                break;
+            }
+        }
+        break;
+    case Light::DIRECTIONAL:
+        for (std::list<Light *>::iterator i = directionalLights.begin(); i != directionalLights.end(); i++){
+            if ((*i) == light){
+                directionalLights.erase(i);
+                break;
+            }
+        }
+        break;
+    }
+}
+
 std::list<Light *> LightManager::getPointLights(){
     return pointLights;
 }

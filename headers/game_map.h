@@ -1,8 +1,5 @@
-#ifndef __SCENE_H__
-#define __SCENE_H__
-#include <fstream>
-
-typedef unsigned char Uint8;
+#ifndef __GAME_MAP_H__
+#define __GAME_MAP_H__
 
 #include "mesh.h"
 #include "shader.h"
@@ -23,7 +20,6 @@ typedef unsigned char Uint8;
 
 #include <iostream>
 #include <string>
-#include <stack>
 
 using namespace std;
 

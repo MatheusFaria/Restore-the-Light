@@ -123,6 +123,15 @@ void Object3D::addChild(Object3D * child){
     child->setParent(this);
 }
 
+void Object3D::removeChild(Object3D * child){
+    for (std::vector<Object3D *>::iterator i = children.begin(); i != children.end(); i++){
+        if ((*i) == child){
+            children.erase(i);
+            break;
+        }
+    }
+}
+
 void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
     glUniformMatrix4fv(handle, 1, GL_FALSE, glm::value_ptr(matrix));
 }
