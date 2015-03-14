@@ -1,13 +1,8 @@
 #include "object3d.h"
 
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 3
-*/
-
 #include <iostream>
 
+#include "GLSL.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "virtual_camera.h"
 
@@ -18,10 +13,6 @@ Object3D::Object3D(Mesh * _mesh, Shader * _shader) : mesh(_mesh), shader(_shader
     parent = NULL;
     matrixStack.push(glm::mat4(1.0f));
     modelTransform = glm::mat4(1.0f);
-    hasElements = false;
-    hasPosition = false;
-    hasNormals = false;
-    hasTexture = false;
 }
 
 void Object3D::addTransformation(glm::mat4 matrix) {
@@ -58,7 +49,6 @@ void Object3D::loadElementBuffer(std::vector<unsigned int> v){
 }
 
 void Object3D::loadElementBuffer(){
-    hasElements = true;
     loadElementBuffer(mesh->getIndices());
 }
 
@@ -67,17 +57,14 @@ GLuint Object3D::getElementBuffer(){
 }
 
 void Object3D::loadVertexBuffer(std::string bufferName){
-    hasPosition = true;
     loadArrayBuffer(bufferName, mesh->getVertices());
 }
 
 void Object3D::loadNormalBuffer(std::string bufferName){
-    hasNormals = true;
     loadArrayBuffer(bufferName, mesh->getNormals());
 }
 
 void Object3D::loadTextureBuffer(std::string bufferName){
-    hasTexture = true;
     loadArrayBuffer(bufferName, mesh->getTexCoords());
 }
 
@@ -90,7 +77,10 @@ void Object3D::setParent(Object3D * _parent){
 }
 
 glm::mat4 Object3D::getModelMatrix(){
-    return modelTransform;
+    if (parent != NULL)
+        return parent->getModelMatrix()*modelTransform;
+    else
+        return modelTransform;
 }
 
 void Object3D::enableAttrArray3f(std::string aHandle, std::string bufHandle){
@@ -137,55 +127,8 @@ void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
     glUniformMatrix4fv(handle, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-void Object3D::bindModelMatrix(std::string handle){
-    if (parent != NULL){
-        bindUniformMatrix4f(shader->getHandle(handle), parent->getModelMatrix()*modelTransform);
-        if (hasNormals)
-            bindUniformMatrix4f(shader->getHandle("uNormalMatrix"),
-            glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*parent->getModelMatrix()*modelTransform)));
-    }
-    else{
-        bindUniformMatrix4f(shader->getHandle(handle), modelTransform);
-        if (hasNormals)
-            bindUniformMatrix4f(shader->getHandle("uNormalMatrix"),
-            glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*modelTransform)));
-    }
-}
-
-void Object3D::bindViewMatrix(std::string handle){
-    bindUniformMatrix4f(shader->getHandle(handle), CamManager::currentCam()->getViewMatrix());
-}
-
-void Object3D::bindProjectionMatrix(std::string handle){
-    bindUniformMatrix4f(shader->getHandle(handle), CamManager::currentCam()->projectionMatrix);
-}
-
 void Object3D::draw(){
-    if (shader){
-        glUseProgram(shader->getId());
-
-        bindViewMatrix("uViewMatrix");
-        bindProjectionMatrix("uProjMatrix");
-
-        if (hasPosition)
-            enableAttrArray3f("aPosition", "posBufObj");
-        if (hasNormals)
-            enableAttrArray3f("aNormal", "norBufObj");
-        if (hasElements)
-            bindElements();
-    }
-
     drawObject();
-
-    if (shader){
-        if (hasPosition)
-            disableAttrArray("aPosition");
-        if (hasNormals)
-            disableAttrArray("aNormal");
-
-        unbindAll();
-    }
-
     for (unsigned int i = 0; i < children.size(); i++){
         children[i]->draw();
     }

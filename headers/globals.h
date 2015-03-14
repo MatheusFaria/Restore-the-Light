@@ -1,7 +1,7 @@
 #ifndef __GLOBAL_H__
 #define __GLOBAL_H__
 
-#include "GLIncludes.h"
+#include <GLFW/glfw3.h>
 
 namespace Global{
     const int screenHeight = 600;
@@ -11,7 +11,7 @@ namespace Global{
 
     const std::string gameName = "Restore the Light";
 
-    GLFWwindow* window;
+    const bool debug = true;
 }
 
 #endif

@@ -1,12 +1,6 @@
 #ifndef OBJECT3D_H
 #define OBJECT3D_H
 
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 3
-*/
-
 #include <map>
 #include <vector>
 #include <stack>
@@ -34,14 +28,10 @@ public:
     void enableAttrArray2f(std::string aHandle, std::string bufHandle);
     void disableAttrArray(std::string aHandle);
     
-    
     void unbindAll();
     
     void bindElements();
     void bindUniformMatrix4f(const GLint handle, glm::mat4 matrix);
-    void bindModelMatrix(std::string handle);
-    void bindViewMatrix(std::string handle);
-    void bindProjectionMatrix(std::string handle);
     
     void addChild(Object3D * child);
     void setParent(Object3D * _parent);
@@ -73,8 +63,6 @@ private:
 
     std::stack <glm::mat4> matrixStack;
     glm::mat4 modelTransform;
-
-    bool hasPosition, hasNormals, hasElements, hasTexture;
 };
 
 #endif

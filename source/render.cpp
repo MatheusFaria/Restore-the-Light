@@ -48,10 +48,9 @@ namespace Render{
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
 
-        shader = LoadManager::getShader("default-texture-vertex.glsl",
-            "default-texture-fragment.glsl");
-        shader->loadHandle("aPosition");
-        shader->loadHandle("uTexID");
+        shader = LoadManager::getShader(
+            "texture-vertex.glsl",
+            "texture-fragment.glsl");
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -493,55 +492,21 @@ namespace Render{
     }
 
     void LightProcessor::initShader(){
-        pointShader = LoadManager::getShader("default-lighting-vertex.glsl",
-            "default-point-light-fragment.glsl");
-        pointShader->loadHandle("aPosition");
-        pointShader->loadHandle("uMVP");
-        pointShader->loadHandle("uDiffuseID");
-        pointShader->loadHandle("uPositionID");
-        pointShader->loadHandle("uNormalID");
-        pointShader->loadHandle("uSpecularID");
-        pointShader->loadHandle("uEye");
-        pointShader->loadHandle("uLightPos");
-        pointShader->loadHandle("uLightFallOff");
-        pointShader->loadHandle("uLightColor");
-        pointShader->loadHandle("uScreenSize");
+        pointShader = LoadManager::getShader(
+            "light-vertex.glsl",
+            "light-point-fragment.glsl");
 
-        spotShader = LoadManager::getShader("default-lighting-vertex.glsl",
-            "default-spot-light-fragment.glsl");
-        spotShader->loadHandle("aPosition");
-        spotShader->loadHandle("uMVP");
-        spotShader->loadHandle("uDiffuseID");
-        spotShader->loadHandle("uPositionID");
-        spotShader->loadHandle("uNormalID");
-        spotShader->loadHandle("uSpecularID");
-        spotShader->loadHandle("uEye");
-        spotShader->loadHandle("uLightPos");
-        spotShader->loadHandle("uLightDir");
-        spotShader->loadHandle("uLightFallOff");
-        spotShader->loadHandle("uLightCutOffAngle");
-        spotShader->loadHandle("uLightColor");
-        spotShader->loadHandle("uScreenSize");
+        spotShader = LoadManager::getShader(
+            "light-vertex.glsl",
+            "light-spot-fragment.glsl");
 
-        directionalShader = LoadManager::getShader("default-lighting-vertex.glsl",
-            "default-directional-light-fragment.glsl");
-        directionalShader->loadHandle("aPosition");
-        directionalShader->loadHandle("uMVP");
-        directionalShader->loadHandle("uDiffuseID");
-        directionalShader->loadHandle("uPositionID");
-        directionalShader->loadHandle("uNormalID");
-        directionalShader->loadHandle("uSpecularID");
-        directionalShader->loadHandle("uEye");
-        directionalShader->loadHandle("uLightDir");
-        directionalShader->loadHandle("uLightColor");
-        directionalShader->loadHandle("uScreenSize");
+        directionalShader = LoadManager::getShader(
+            "light-vertex.glsl",
+            "light-directional-fragment.glsl");
 
-        ambientShader = LoadManager::getShader("default-lighting-vertex.glsl",
-            "default-ambient-light-fragment.glsl");
-        ambientShader->loadHandle("aPosition");
-        ambientShader->loadHandle("uMVP");
-        ambientShader->loadHandle("uAmbientID");
-        ambientShader->loadHandle("uScreenSize");
+        ambientShader = LoadManager::getShader(
+            "light-vertex.glsl",
+            "light-ambient-fragment.glsl");
     }
 
     void LightProcessor::initGeometry(){

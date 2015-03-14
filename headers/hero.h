@@ -18,7 +18,6 @@
 
 #include "scene.h"
 
-
 class Hero : public Object3D{
 public:
     Hero(GameMap * _map, int cubeIndex) : gameMap(_map), currentCube(cubeIndex){
@@ -29,10 +28,11 @@ public:
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
-        loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
-        shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
+        shader = LoadManager::getShader(
+            "geometry-pass-map-vertex.glsl",
+            "geometry-pass-map-fragment.glsl");
 
         pos = gameMap->getCubePos(currentCube);
         pos.y += defaultHeight;
@@ -52,22 +52,43 @@ public:
         light->pos = glm::vec3(pos.x, pos.y + 8, pos.z);
 
         if (!isFPS()){
+            glUseProgram(shader->getId());
+
+            enableAttrArray3f("aPosition", "posBufObj");
+            enableAttrArray3f("aNormal", "norBufObj");
+            bindElements();
+
             Material::SetMaterial(Material::GOLD, shader);
             glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
 
-            enableAttrArray2f("aTexCoord", "texBufObj");
-
             glUniform1i(shader->getHandle("uCompleteGlow"), 1);
-            glUniform1i(shader->getHandle("uApplyTexture"), 0);
 
             loadIdentity();
 
             addTransformation(glm::translate(glm::mat4(1.0f), pos));
             addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
-            bindModelMatrix("uModelMatrix");
-        
-        
+
+            bindUniformMatrix4f(
+                shader->getHandle("uProjMatrix"),
+                CamManager::currentCam()->projectionMatrix);
+
+            bindUniformMatrix4f(
+                shader->getHandle("uViewMatrix"),
+                CamManager::currentCam()->getViewMatrix());
+
+            bindUniformMatrix4f(
+                shader->getHandle("uModelMatrix"),
+                getModelMatrix());
+
+            bindUniformMatrix4f(
+                shader->getHandle("uNormalMatrix"),
+                glm::transpose(glm::inverse(CamManager::currentCam()->getViewMatrix()*getModelMatrix())));
+
             drawElements();
+
+            disableAttrArray("aPosition");
+            disableAttrArray("aNormal");
+            unbindAll();
         }
     }
 
@@ -93,6 +114,10 @@ public:
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
             LightManager::addLight(new Light(glm::vec3(rand_float(), rand_float(), rand_float()),
                 pos, glm::vec3(0, 0.6, 0)));
+        }
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE){
+            lightShot();
         }
         
         if (isFPS()){
@@ -208,13 +233,16 @@ private:
 
     void setControlMode(int val){
         if (val == FPS || val == FREE){
-            controlMode = FPS;
             pos = glm::vec3(pos.x, initialPos.y, pos.z);
             CamManager::setCam(FPS_CAM);
-            if (val == FPS)
+            if (val == FPS){
+                controlMode = FPS;
                 CamManager::currentCam()->turnOffY();
-            else
+            }
+            else{
+                controlMode = FREE;
                 CamManager::currentCam()->turnOnY();
+            }
             CamManager::currentCam()->setAngles(-90, 0);
             CamManager::currentCam()->eye = pos;
             CamManager::currentCam()->lookAt = glm::vec3(-1, pos.y, pos.z);
@@ -233,6 +261,10 @@ private:
         else{
             Log::error("Hero::setControlMode", "No such control mode option", "", "");
         }
+    }
+
+    void lightShot(){
+
     }
 };
 

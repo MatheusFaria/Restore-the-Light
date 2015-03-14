@@ -1,57 +1,58 @@
 #include "shader.h"
 
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 3
-*/
-
 #include <cctype>
-
-#include "log.h"
 #include <iostream>
 
+#include "globals.h"
+#include "GLSL.h"
 
 Shader::Shader(){}
 
 Shader::Shader(std::string _vertex, std::string _fragment) : 
-    vertexShader(_vertex), fragmentShader(_fragment){
-    load();
-}
+    vertexShader(_vertex), fragmentShader(_fragment){}
 
 GLuint Shader::getId(){
     return id;
 }
 
-void Shader::loadHandle(std::string handle_name){
+bool Shader::loadHandle(std::string handle_name){
     if (handles.find(handle_name) == handles.end()){
         switch (tolower(handle_name[0])){
         case 'a':
-            handles[handle_name] = GLSL::getAttribLocation(id, handle_name.c_str());
+            handles[handle_name] = glGetAttribLocation(id, handle_name.c_str());
             break;
         case 'u':
-            handles[handle_name] = GLSL::getUniformLocation(id, handle_name.c_str());
+            handles[handle_name] = glGetUniformLocation(id, handle_name.c_str());
             break;
         default:
-            Log::error("Shader::loadHandle", "Your handle name should start with a or u",
-                "uName or aName", handle_name);
+            if (Global::debug){
+                std::cout << "Shader::loadHandle" << 
+                             "\nYour handle name should start with a or u: " << 
+                             handle_name << "\n";
+                return false;
+            }
         }
-        if (handles[handle_name] < 0)
-            Log::error("Shader::loadHandle", "Could not load handle",
-            "Existing handle", handle_name);
+        if (handles[handle_name] < 0){
+            if (Global::debug)
+                std::cout << "Shader::loadHandle" <<
+                "\nCould not load handle: " <<
+                handle_name << "\n";
+            return false;
+        }
     }
+    return true;
 }
 
 GLint Shader::getHandle(std::string handle_name){
     if (handles.find(handle_name) == handles.end()){
-        Log::error("Shader::getHandle", "Handle not loaded",
-            "Loaded handle", handle_name);
+        if (Global::debug)
+            std::cout << "Shader::getHandle" << "\nHandle not loaded: " << handle_name << "\n";
         return -1;
     }
     return handles[handle_name];
 }
 
-void Shader::load()
+bool Shader::load()
 {
     GLint rc;
 
@@ -66,27 +67,33 @@ void Shader::load()
     glShaderSource(FS, 1, &fshader, NULL);
 
     // Compile vertex shader
-    std::cout << vertexShader << "\n";
-    Log::out("Vertex ");
+    if (Global::debug)
+        std::cout << vertexShader << "\n";
     glCompileShader(VS);
-    GLSL::printError();
+    if (Global::debug)
+        GLSL::printError();
     glGetShaderiv(VS, GL_COMPILE_STATUS, &rc);
-    GLSL::printShaderInfoLog(VS);
+    if (Global::debug)
+        GLSL::printShaderInfoLog(VS);
     if (!rc) {
-        Log::error("Shader::load", "Error compiling vertex shader",
-            "Correct shader", vertexShader);
+        if (Global::debug)
+            std::cout << "Shader::load" << "\nError compiling vertex shader\n";
+        return false;
     }
 
     // Compile fragment shader
-    std::cout << fragmentShader << "\n";
-    Log::out("Fragment ");
+    if (Global::debug)
+        std::cout << fragmentShader << "\n";
     glCompileShader(FS);
-    GLSL::printError();
+    if (Global::debug)
+        GLSL::printError();
     glGetShaderiv(FS, GL_COMPILE_STATUS, &rc);
-    GLSL::printShaderInfoLog(FS);
+    if (Global::debug)
+        GLSL::printShaderInfoLog(FS);
     if (!rc) {
-        Log::error("Shader::load", "Error compiling fragment shader",
-            "Correct shader", fragmentShader);
+        if (Global::debug)
+            std::cout << "Shader::load" << "\nError compiling fragment shader\n";
+        return false;
     }
 
     // Create the program and link
@@ -94,12 +101,17 @@ void Shader::load()
     glAttachShader(id, VS);
     glAttachShader(id, FS);
     glLinkProgram(id);
-    GLSL::printError();
+    if (Global::debug)
+        GLSL::printError();
     glGetProgramiv(id, GL_LINK_STATUS, &rc);
-    GLSL::printProgramInfoLog(id);
+    if (Global::debug)
+        GLSL::printProgramInfoLog(id);
     if (!rc) {
-        Log::error("Shader::load", "Error linking shaders",
-            "", vertexShader + " " + fragmentShader);
+        if (Global::debug)
+            std::cout << "Shader::load" << "\nError linking shaders\n";
+        return false;
     }
+
+    return true;
 }
 

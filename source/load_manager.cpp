@@ -18,9 +18,22 @@ std::string joinPath(std::string folder, std::string file){
 Shader * LoadManager::getShader(std::string vertex, std::string fragment){
     std::string name = vertex + fragment;
     if (shaders.find(name) == shaders.end()){
-        shaders[name] = new Shader(joinPath(shaderFolder, vertex), joinPath(shaderFolder, fragment));
+        loadShader(vertex, fragment);
     }
     return shaders[name];
+}
+
+bool LoadManager::loadShader(std::string vertex, std::string fragment){
+    std::string name = vertex + fragment;
+    if (shaders.find(name) == shaders.end()){
+        Shader * s = new Shader(joinPath(shaderFolder, vertex), joinPath(shaderFolder, fragment));
+        bool ret = s->load();
+        if (ret)
+            shaders[name] = s;
+        else
+            return false;
+    }
+    return true;
 }
 
 Mesh * LoadManager::getMesh(std::string name){

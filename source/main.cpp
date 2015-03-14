@@ -27,8 +27,11 @@
 
 using namespace std;
 
+GLFWwindow * window;
+
 bool g_lock_mouse = true;
 bool g_first_mouse_movement = true;
+bool doNotRun = false;
 int hot_key = 0;
 
 Render::GeometryProcessor *gBuffer;
@@ -92,68 +95,132 @@ void setupCams(){
 void setupLights(){
 }
 
-void installShaders(){
+bool loadShaderWithHandles(string vertex, string fragment, string handlesNames[], int nHandles){
     Shader * shader;
+    bool ret = true;
 
-    shader = LoadManager::getShader("vert.glsl", "frag.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("aNormal");
-    shader->loadHandle("uProjMatrix");
-    shader->loadHandle("uViewMatrix");
-    shader->loadHandle("uModelMatrix");
-    shader->loadHandle("UaColor");
-    shader->loadHandle("UdColor");
-    shader->loadHandle("UsColor");
-    shader->loadHandle("UeColor");
-    shader->loadHandle("Ushine");
-    shader->loadHandle("uEye");
-    shader->loadHandle("uNormalMatrix"); 
+    ret = LoadManager::loadShader(vertex, fragment);
+    if (!ret)
+        return false;
 
-    shader->loadHandle("uLightPos");
-    shader->loadHandle("uLightFallOff");
-    shader->loadHandle("uLightColor");
-
-    shader->loadHandle("uTextureID");
-    shader->loadHandle("aTexCoord");
-
-    shader = LoadManager::getShader("vert-map.glsl", "frag-map.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("aNormal");
-
-    shader->loadHandle("uProjMatrix");
-    shader->loadHandle("uViewMatrix");
-    shader->loadHandle("uModelMatrix");
-    shader->loadHandle("uNormalMatrix");
-
-    shader->loadHandle("UaColor");
-    shader->loadHandle("UdColor");
-    shader->loadHandle("UsColor");
-    shader->loadHandle("UeColor");
-    shader->loadHandle("Ushine");
+    shader = LoadManager::getShader(vertex, fragment);
     
-    shader->loadHandle("uTexID");
-    shader->loadHandle("aTexCoord");
+    bool handleSucess = false;
+    for (int i = 0; i < nHandles; i++){
+        if (Global::debug)
+            std::cout << "Loading handle: " << handlesNames[i] << " -- ";
+
+        handleSucess = shader->loadHandle(handlesNames[i]);
+
+        if (Global::debug){
+            if (!handleSucess){
+                std::cout << "FAIL";
+            }
+            else{
+                std::cout << "SUCCESS";
+            }
+            std::cout << "\n";
+        }
+
+        ret = ret && handleSucess;
+    }
+
+    return ret;
+}
+
+bool installShaders(){
+    bool ret = true;
+
+    string handles1[] = { 
+        "aPosition", "uMVP", "uDiffuseID", "uPositionID", 
+        "uNormalID", "uSpecularID", "uEye", "uLightPos", 
+        "uLightFallOff", "uLightColor", "uScreenSize"};
+    ret = ret && loadShaderWithHandles(
+                    "light-vertex.glsl", 
+                    "light-point-fragment.glsl", 
+                    handles1, 11);
+
+
+    string handles2[] = {
+        "aPosition", "uMVP", "uDiffuseID", "uPositionID",
+        "uNormalID", "uSpecularID", "uEye", "uLightPos",
+        "uLightDir", "uLightFallOff", "uLightColor", "uLightCutOffAngle",
+        "uScreenSize" };
+    ret = ret && loadShaderWithHandles(
+        "light-vertex.glsl",
+        "light-spot-fragment.glsl",
+        handles2, 13);
+
+
+    string handles3[] = {
+        "aPosition", "uMVP", "uDiffuseID", "uPositionID",
+        "uNormalID", "uSpecularID", "uEye", 
+        "uLightDir", "uLightColor", "uScreenSize" };
+    ret = ret && loadShaderWithHandles(
+        "light-vertex.glsl",
+        "light-directional-fragment.glsl",
+        handles3, 10);
+
+
+    string handles4[] = {
+        "aPosition", "uMVP", "uAmbientID", "uScreenSize"};
+    ret = ret && loadShaderWithHandles(
+        "light-vertex.glsl",
+        "light-ambient-fragment.glsl",
+        handles4, 4);
+
+
+    string handles5[] = {
+        "aPosition", "uTexID", "uDir" };
+    ret = ret && loadShaderWithHandles(
+        "texture-vertex.glsl",
+        "blur-fragment.glsl",
+        handles5, 3);
+
+
+    string handles6[] = {
+        "aPosition", "uTex1ID", "uTex2ID" };
+    ret = ret && loadShaderWithHandles(
+        "texture-vertex.glsl",
+        "sum-two-textures-fragment.glsl",
+        handles6, 3);
+
+
+    string handles7[] = {
+        "aPosition", "uTex1ID", "uTex2ID", "uTex3ID"};
+    ret = ret && loadShaderWithHandles(
+        "texture-vertex.glsl",
+        "get-glow-spots-fragment.glsl",
+        handles7, 4);
+
+
+    string handles8[] = {
+        "aPosition", "aNormal", "uProjMatrix", "uViewMatrix", 
+        "uModelMatrix", "uNormalMatrix", "uCompleteGlow", "UdColor", 
+        "UaColor", "UsColor", "UeColor", "Ushine" };
+    ret = ret && loadShaderWithHandles(
+        "geometry-pass-map-vertex.glsl",
+        "geometry-pass-map-fragment.glsl",
+        handles8, 12);
+
+    string handles9[] = {
+        "aPosition", "aNormal", "aTexCoord", "uProjMatrix", 
+        "uViewMatrix", "uModelMatrix", "uNormalMatrix", "uCompleteGlow", 
+        "UaColor", "UsColor", "UeColor",
+        "Ushine" , "uTexID", "uAlphaTexID"};
+    ret = ret && loadShaderWithHandles(
+        "geometry-pass-map-texture-vertex.glsl",
+        "geometry-pass-map-texture-fragment.glsl",
+        handles9, 14);
+
+    string handles10[] = {
+        "aPosition", "uTexID" };
+    ret = ret && loadShaderWithHandles(
+        "texture-vertex.glsl",
+        "texture-fragment.glsl",
+        handles10, 2);
     
-    shader->loadHandle("uAlphaTexID");
-
-    shader->loadHandle("uCompleteGlow");
-    shader->loadHandle("uApplyTexture");
-
-    shader = LoadManager::getShader("default-texture-vertex.glsl", "frag-blur.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uTexID");
-    shader->loadHandle("uDir");
-
-    shader = LoadManager::getShader("default-texture-vertex.glsl", "sum-two-textures-fragment.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uTex1ID");
-    shader->loadHandle("uTex2ID");
-
-    shader = LoadManager::getShader("default-texture-vertex.glsl", "get-glow-spots-fragment.glsl");
-    shader->loadHandle("aPosition");
-    shader->loadHandle("uTex1ID");
-    shader->loadHandle("uTex2ID");
-    shader->loadHandle("uTex3ID");
+    return ret;
 }
 
 void installMeshes(){
@@ -194,11 +261,11 @@ void createGaussBlurShader(){
 
         "void main()" << eol <<
         "{" << eol <<
-        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, 600, 1, uDir), 1);" << eol <<
+        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, " << Global::screenWidth << ", 1, uDir), 1);" << eol <<
         "}" << eol;
 
     ofstream file;
-    file.open("shaders/frag-blur.glsl");
+    file.open("shaders/blur-fragment.glsl");
     file << shader.str();
     file.close();
 
@@ -207,11 +274,14 @@ void createGaussBlurShader(){
 void setupWorld(){
     createGaussBlurShader();
 
+    if (!installShaders()){
+        std::cerr << "Error Loading Shaders\n";
+        doNotRun = true;
+    }
+    installMeshes();
+
     setupCams();
     setupLights();
-
-    installShaders();
-    installMeshes();
 }
 
 void setupGame(){
@@ -287,7 +357,7 @@ int main(int argc, char **argv)
     // Initialise GLFW
     if (!glfwInit())
     {
-        fprintf(stderr, "Failed to initialize GLFW\n");
+        std::cerr << "Failed to initialize GLFW\n";
         return -1;
     }
 
@@ -297,33 +367,34 @@ int main(int argc, char **argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
     // Open a window and create its OpenGL context
-    Global::window = glfwCreateWindow(Global::screenWidth, Global::screenHeight, Global::gameName.c_str(), NULL, NULL);
-    if (Global::window == NULL){
-        fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
+    window = glfwCreateWindow(Global::screenWidth, Global::screenHeight, Global::gameName.c_str(), NULL, NULL);
+    if (window == NULL){
+        std::cerr << "Failed to open GLFW window.\n";
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(Global::window);
-    glfwSetKeyCallback(Global::window, key_callback);
-    glfwSetCursorPosCallback(Global::window, cursor_position_callback);
-    glfwSetInputMode(Global::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // Initialize glad
     if (glewInit() != GLEW_OK) {
-        fprintf(stderr, "Unable to initialize glad");
-        glfwDestroyWindow(Global::window);
+        std::cerr << "Unable to initialize glew\n";
+        glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
     }
 
     // Ensure we can capture the escape key being pressed below
-    glfwSetInputMode(Global::window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSetInputMode(Global::window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
 
     glEnable(GL_TEXTURE_2D);
 
-    setupRenderEngine();
     setupWorld();
+    setupRenderEngine();
     setupGame();
 
     vector<Object3D *> objs;
@@ -334,47 +405,57 @@ int main(int argc, char **argv)
 
     double time = glfwGetTime();
     int frames = 0;
-    do{
-        hero->checkInput(Global::window);
 
-        gBuffer->pass(objs);
+    if (doNotRun){
+        do{
+            // Swap buffers
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        } // Check if the ESC key was pressed or the window was closed
+        while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+        glfwWindowShouldClose(window) == 0);
+    }
+    else{
+        do{
+            hero->checkInput(window);
 
-        lightProcessor->pass(gBuffer, LightManager::getPointLights(), 
-            LightManager::getSpotLights(), LightManager::getDirectionalLights());
+            gBuffer->pass(objs);
 
-        alphaPost->passTernaryTextureOp(
-            gBuffer->getOutFBO()->getTexture(1),
-            gBuffer->getOutFBO()->getTexture(0), 
-            lightProcessor->getOutFBO()->getTexture(0),
-            LoadManager::getShader("default-texture-vertex.glsl", "get-glow-spots-fragment.glsl"));
+            lightProcessor->pass(gBuffer, LightManager::getPointLights(), 
+                LightManager::getSpotLights(), LightManager::getDirectionalLights());
 
-        blurPost->passBlur(alphaPost, 2,
-            LoadManager::getShader("default-texture-vertex.glsl", "frag-blur.glsl"));
+            alphaPost->passTernaryTextureOp(
+                gBuffer->getOutFBO()->getTexture(1),
+                gBuffer->getOutFBO()->getTexture(0), 
+                lightProcessor->getOutFBO()->getTexture(0),
+                LoadManager::getShader("texture-vertex.glsl", "get-glow-spots-fragment.glsl"));
 
-        bloomPost->passBinaryTextureOp(
-            blurPost->getOutFBO()->getTexture(0), 
-            lightProcessor->getOutFBO()->getTexture(0), 
-            LoadManager::getShader("default-texture-vertex.glsl", "sum-two-textures-fragment.glsl"));
-        bloomPost->displayTexture(0);
+            blurPost->passBlur(alphaPost, 2,
+                LoadManager::getShader("texture-vertex.glsl", "blur-fragment.glsl"));
+
+            bloomPost->passBinaryTextureOp(
+                blurPost->getOutFBO()->getTexture(0), 
+                lightProcessor->getOutFBO()->getTexture(0), 
+                LoadManager::getShader("texture-vertex.glsl", "sum-two-textures-fragment.glsl"));
+            bloomPost->displayTexture(0);
 
 
+            frames++;
+            if (glfwGetTime() - time >= 1.0){
+                cout << frames << endl;
+                frames = 0;
+                time = glfwGetTime();
+            }
 
-        frames++;
-        if (glfwGetTime() - time >= 1.0){
-            cout << frames << endl;
-            frames = 0;
-            time = glfwGetTime();
-        }
+            // Swap buffers
+            glfwSwapBuffers(window);
+            glfwPollEvents();
 
-        // Swap buffers
-        glfwSwapBuffers(Global::window);
-        glfwPollEvents();
-
-    } // Check if the ESC key was pressed or the window was closed
-    while (glfwGetKey(Global::window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-    glfwWindowShouldClose(Global::window) == 0);
-
-    // Close OpenGL Global::window and terminate GLFW
+        } // Check if the ESC key was pressed or the window was closed
+        while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+        glfwWindowShouldClose(window) == 0);
+    }
+    // Close OpenGL window and terminate GLFW
     glfwTerminate();
 
     return 0;

@@ -8,4 +8,3 @@ void main()
 {
 	gl_Position = uMVP*vec4(aPosition, 1);
 }
-
