@@ -40,7 +40,7 @@ public:
         initialPos = pos;
 
         setControlMode(FPS);
-        velocity = 0.03f;
+        velocity = 0.3f;
         floatVeloctiy = 0.008f;
         shotTime = 0;
         lastDir = glm::vec3(0, 0, -1);
@@ -52,6 +52,8 @@ public:
 
         setCollisionsMask(2, 0);
         CollisionManager::setHero(this);
+
+        gameMap->litCube(currentCube);
     }
 
     void drawObject(){
@@ -98,7 +100,6 @@ public:
         }
 
         CollisionManager::checkCollisionWithEnemy(this);
-
     }
 
     float rand_float(){
@@ -171,7 +172,7 @@ private:
     int floatDirection = UP_DIR;
     float defaultHeight = 2, heightOffset = 0.4;
 
-    double shotCoolDown = 2.0, shotTime;
+    double shotCoolDown = 0.5, shotTime;
 
     int controlMode;
     const int FPS = 0,
@@ -200,11 +201,17 @@ private:
         }
 
         pos += CamManager::currentCam()->getViewVector()*(zoomDir*velocity);
-        pos += CamManager::currentCam()->getViewVector()*(strafeDir*velocity);
+        pos += CamManager::currentCam()->getStrafeVector()*(strafeDir*velocity);
+        pos.y = oldPos.y;
 
         if (gameMap->thereIsCube(pos) || controlMode == FREE){
             CamManager::currentCam()->zoom(zoomDir, velocity);
             CamManager::currentCam()->strafe(strafeDir, velocity);
+
+            if (controlMode == FPS){
+                currentCube = gameMap->getCubePos(pos);
+                gameMap->litCube(currentCube);
+            }
 
             pos = CamManager::currentCam()->eye;
         }
@@ -237,6 +244,10 @@ private:
 
         if (!gameMap->thereIsCube(pos)){
             pos = oldPos;
+        }
+        else {
+            currentCube = gameMap->getCubePos(pos);
+            gameMap->litCube(currentCube);
         }
 
         CamManager::currentCam()->lookAt = glm::vec3(pos.x, initialPos.y, pos.z);

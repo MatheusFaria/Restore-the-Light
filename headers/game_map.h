@@ -7,7 +7,6 @@
 #include "load_manager.h"
 #include "material.h"
 #include "virtual_camera.h"
-#include "log.h"
 #include "light.h"
 #include "GLSL.h"
 
@@ -26,9 +25,7 @@ using namespace std;
 
 class GroundPiece : public Object3D{
 public:
-    GroundPiece(glm::mat4 _translateMat) : translateMat(_translateMat){
-
-    }
+    GroundPiece(glm::mat4 _translateMat) : translateMat(_translateMat){}
 
     void init(){
         mesh = LoadManager::getMesh("cube-textures.obj");
@@ -39,11 +36,8 @@ public:
         setCollisionsMask(1, 0);
     }
 
-    void drawObject(){
-
-    }
-    void onCollision(Object3D * obj){
-    }
+    void drawObject(){}
+    void onCollision(Object3D * obj){}
 
 private:
     glm::mat4 translateMat;
@@ -51,16 +45,10 @@ private:
 
 class GameMap : public Object3D{
 public:
-    string mapLayout;
-    int mapRowsSize;
-    int mapColsSize;
-    GLuint tex, atex;
-    vector<glm::mat4> cubesMatrices;
-
-    GameMap(string _mapLayout, int rows, int cols):
-    mapLayout(_mapLayout), mapRowsSize(rows), mapColsSize(cols){
-        if (mapLayout.size() != mapRowsSize*mapColsSize){
-            Log::error("GameMap::generateMap", "Incorrect size for a map", "", mapLayout);
+    GameMap(string _mapLayout, int _rows, int _cols):
+    mapLayout(_mapLayout), rows(_rows), cols(_cols){
+        if (mapLayout.size() != rows*cols){
+            std::cout << "GameMap::generateMap: " << "Incorrect size for a map\n" << mapLayout << "\n";
         }
     }
 
@@ -69,29 +57,29 @@ public:
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
-        loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
         shader = LoadManager::getShader(
-            "geometry-pass-map-texture-vertex.glsl",
-            "geometry-pass-map-texture-fragment.glsl");
-
-        tex = TextureManager::getTexture("enemy.bmp")->getTexture();
-        atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
-
+            "geometry-pass-map-vertex.glsl",
+            "geometry-pass-map-fragment.glsl");
 
         GroundPiece * piece;
-        for (int index = 0; index < mapRowsSize*mapColsSize; index++){
+        for (int index = 0; index < rows*cols; index++){
             switch (mapLayout[index]){
             case DEFAULT_CUBE:
                 piece = new GroundPiece(glm::translate(glm::mat4(1.0f), getCubePos(index)));
                 piece->init();
+
                 cubesMatrices.push_back(glm::translate(glm::mat4(1.0f), getCubePos(index)));
+
+                cubesIndices.push_back(index);
                 break;
             case EMPTY_SPACE:
             default:
                 break;
             }
+
+            lightPath.push_back(0);
         }
     }
 
@@ -100,21 +88,9 @@ public:
 
         enableAttrArray3f("aPosition", "posBufObj");
         enableAttrArray3f("aNormal", "norBufObj");
-        enableAttrArray2f("aTexCoord", "texBufObj");
         bindElements();
 
-        Material::SetMaterial(Material::FLAT_GREY, shader, false, false);
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
-
-        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glUniform1i(shader->getHandle("uTexID"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, atex);
-        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
+        Material::SetMaterial(Material::FLAT_GREY, shader, false);
         
         bindUniformMatrix4f(
             shader->getHandle("uProjMatrix"),
@@ -127,6 +103,15 @@ public:
 
         for (int index = 0; index < cubesMatrices.size(); index++){
             addTransformation(cubesMatrices[index]);
+
+            glUniform1i(shader->getHandle("uCompleteGlow"), lightPath[cubesIndices[index]]);
+
+            if (lightPath[cubesIndices[index]] == 1){
+                glUniform3f(shader->getHandle("UeColor"), 0.6, 0.6, 0);
+            }
+            else{
+                glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+            }
 
             bindUniformMatrix4f(
                 shader->getHandle("uModelMatrix"),
@@ -142,13 +127,12 @@ public:
 
         disableAttrArray("aPosition");
         disableAttrArray("aNormal");
-        disableAttrArray("aTexCoord");
         unbindAll();
     }
 
-    glm::vec3 getCubePos(int cubePos){
-        int i = cubePos / mapColsSize;
-        int j = cubePos % mapColsSize;
+    glm::vec3 getCubePos(int pos){
+        int i = pos / cols;
+        int j = pos % cols;
 
         float x = -CUBE_SIDE*i;
         float z = -CUBE_SIDE*j;
@@ -166,12 +150,24 @@ public:
         return false;
     }
 
-    bool thereIsCube(glm::vec3 pos){
-        pos = -1.0f * pos;
-        float x1 = pos.x / CUBE_SIDE, y1 = pos.y, 
-            z1 = pos.z/CUBE_SIDE;
+    bool thereIsCube(int i, int j){
+        return thereIsCube(getMapPos(i, j));
+    }
 
-        int x = (int) x1, z = (int) z1;
+    bool thereIsCube(glm::vec3 pos){
+        return thereIsCube(getCubePos(pos));
+    }
+
+    int getMapPos(int i, int j){
+        return i*cols + j;
+    }
+
+    int getCubePos(glm::vec3 pos){
+        pos = -1.0f * pos;
+        float x1 = pos.x / CUBE_SIDE, y1 = pos.y,
+            z1 = pos.z / CUBE_SIDE;
+
+        int x = (int)x1, z = (int)z1;
 
         if (pos.x <= x*CUBE_SIDE - 1){
             x--;
@@ -187,23 +183,29 @@ public:
             z++;
         }
 
-        if (x >= 0 && z >= 0 && x < mapRowsSize && z < mapColsSize){
-            return thereIsCube(getMapPos(x, z));
+        if (x >= 0 && z >= 0 && x < rows && z < cols){
+            return getMapPos(x, z);
         }
-        return false;
+        return -1;
     }
 
-    int getMapPos(int i, int j){
-        return i*mapColsSize + j;
-    }
+    void onCollision(Object3D * obj){}
 
-    void onCollision(Object3D * obj){
+    void litCube(int cube){
+        lightPath[cube] = 1;
     }
 
 private:
     static const int CUBE_SIDE = 2;
     static const char EMPTY_SPACE = '.';
     static const char DEFAULT_CUBE = 'c';
+
+    string mapLayout;
+    int rows, cols;
+
+    vector<glm::mat4> cubesMatrices;
+    vector<int> lightPath;
+    vector<int> cubesIndices;
 };
 
 #endif

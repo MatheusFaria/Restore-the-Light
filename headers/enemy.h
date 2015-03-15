@@ -39,6 +39,7 @@ public:
     }
 
     void kill(){
+        std::cout << mesh->getFileName() << std::endl;
         CollisionManager::removeEnemy(collisionListPos);
     }
 
@@ -95,10 +96,10 @@ public:
 
         glUseProgram(shader->getId());
 
-        Material::SetMaterial(Material::BLUE_PLASTIC, shader);
+        Material::SetMaterial(Material::EMERALD, shader);
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
 
-        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
+        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
 
         bindUniformMatrix4f(
             shader->getHandle("uProjMatrix"),
@@ -323,6 +324,9 @@ public:
     }
 
     void onCollision(Object3D *obj){
+        if (finished)
+            return;
+
         if (obj->getCollisionTypeMask() == 3){
             for (int i = 0; i < parts.size(); i++){
                 parts[i]->kill();

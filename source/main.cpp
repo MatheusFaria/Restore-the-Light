@@ -275,7 +275,7 @@ void createGaussBlurShader(){
 
         "void main()" << eol <<
         "{" << eol <<
-        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, " << Global::screenWidth << ", 1, uDir), 1);" << eol <<
+        "    gl_FragData[0] = vec4(gaussianBlur2Pass(uTexID, vTexCoord, " << Global::screenWidth << ", 3, uDir), 1);" << eol <<
         "}" << eol;
 
     ofstream file;
