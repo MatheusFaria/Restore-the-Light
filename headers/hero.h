@@ -14,7 +14,6 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
 
 #include "game_map.h"
 #include "light_shot.h"
@@ -54,6 +53,11 @@ public:
     void drawObject(){
         light->pos = glm::vec3(pos.x, pos.y + 8, pos.z);
 
+        loadIdentity();
+
+        addTransformation(glm::translate(glm::mat4(1.0f), pos));
+        addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
+
         if (!isFPS()){
             glUseProgram(shader->getId());
 
@@ -65,11 +69,6 @@ public:
             glUniform3f(shader->getHandle("UeColor"), 1, 1, 1);
 
             glUniform1i(shader->getHandle("uCompleteGlow"), 1);
-
-            loadIdentity();
-
-            addTransformation(glm::translate(glm::mat4(1.0f), pos));
-            addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.5)));
 
             bindUniformMatrix4f(
                 shader->getHandle("uProjMatrix"),
@@ -141,6 +140,9 @@ public:
 
     bool isISO(){
         return controlMode == ISO;
+    }
+
+    void onCollision(Object3D * obj){
     }
 
 private:

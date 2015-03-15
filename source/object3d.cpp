@@ -13,6 +13,9 @@ Object3D::Object3D(Mesh * _mesh, Shader * _shader) : mesh(_mesh), shader(_shader
     parent = NULL;
     matrixStack.push(glm::mat4(1.0f));
     modelTransform = glm::mat4(1.0f);
+
+    collisionTypeMask = 0;
+    collideWithMask = 0;
 }
 
 void Object3D::addTransformation(glm::mat4 matrix) {
@@ -124,7 +127,7 @@ void Object3D::addChild(Object3D * child){
 }
 
 void Object3D::removeChild(Object3D * child){
-    for (std::vector<Object3D *>::iterator i = children.begin(); i != children.end(); i++){
+    for (std::list<Object3D *>::iterator i = children.begin(); i != children.end(); i++){
         if ((*i) == child){
             children.erase(i);
             break;
@@ -138,8 +141,10 @@ void Object3D::bindUniformMatrix4f(const GLint handle, glm::mat4 matrix) {
 
 void Object3D::draw(){
     drawObject();
-    for (unsigned int i = 0; i < children.size(); i++){
-        children[i]->draw();
+
+    std::list<Object3D *> bkp = children;
+    for (std::list<Object3D *>::iterator i = bkp.begin(); i != bkp.end(); i++){
+        (*i)->draw();
     }
 }
 
@@ -161,4 +166,88 @@ void Object3D::resetMatrix(){
         matrixStack.pop();
     }
     loadIdentity();
+}
+
+bool Object3D::collide(Object3D * obj){
+    glm::vec3 max = getMaxPoint(), min = getMinPoint(),
+              objMax = obj->getMaxPoint(), objMin = obj->getMinPoint();
+    
+    /*std::cout << "\n\n----------------\nA\n";
+    std::cout << max.x << " " << max.y << " " << max.z << std::endl;
+    std::cout << min.x << " " << min.y << " " << min.z << std::endl;
+    std::cout << "B\n";
+    std::cout << objMax.x << " " << objMax.y << " " << objMax.z << std::endl;
+    std::cout << objMin.x << " " << objMin.y << " " << objMin.z << std::endl;*/
+
+    return(
+        (
+            //Collision of A with B
+
+            //Collision on X axis
+            ((max.x >= objMin.x &&
+              max.x <= objMax.x) ||
+             (min.x >= objMin.x &&
+              min.x <= objMax.x))
+            &&
+            //Collision on Y axis
+            ((max.y >= objMin.y &&
+              max.y <= objMax.y) ||
+             (min.y >= objMin.y &&
+              min.y <= objMax.y))
+            &&
+            //Collision on Z axis
+            ((max.z >= objMin.z &&
+              max.z <= objMax.z) ||
+             (min.z >= objMin.z &&
+              min.z <= objMax.z))
+        )
+        ||
+        (
+          //Collision of B with A
+
+          //Collision on X axis
+          ((objMax.x >= min.x &&
+            objMax.x <= max.x) ||
+           (objMin.x >= min.x &&
+            objMin.x <= max.x))
+          &&
+          //Collision on Y axis
+          ((objMax.y >= min.y &&
+            objMax.y <= max.y) ||
+           (objMin.y >= min.y &&
+            objMin.y <= max.y))
+          &&
+          //Collision on Z axis
+          ((objMax.z >= min.z &&
+            objMax.z <= max.z) ||
+           (objMin.z >= min.z &&
+            objMin.z <= max.z))));
+}
+
+
+void Object3D::checkCollision(Object3D * obj){
+    if (collide(obj)){
+        onCollision(obj);
+        obj->onCollision(this);
+    }
+}
+
+glm::vec3 Object3D::getMinPoint(){
+    return glm::vec3(getModelMatrix()*glm::vec4(mesh->getMinPoint(), 1));
+}
+glm::vec3 Object3D::getMaxPoint(){
+    return glm::vec3(getModelMatrix()*glm::vec4(mesh->getMaxPoint(), 1));
+}
+
+int Object3D::getCollisionTypeMask(){
+    return collisionTypeMask;
+}
+
+int Object3D::getCollideWithMask(){
+    return collideWithMask;
+}
+
+void Object3D::setCollisionsMask(int typeMask, int collideMask){
+    collisionTypeMask = typeMask;
+    collideWithMask = collideMask;
 }

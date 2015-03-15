@@ -2,6 +2,7 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <list>
 
 #include "GaussianBlur.h"
 #include "glm/glm.hpp"
@@ -24,6 +25,7 @@
 
 #include "game_map.h"
 #include "hero.h"
+#include "enemy.h"
 
 using namespace std;
 
@@ -40,6 +42,7 @@ Render::PostProcessor *alphaPost, *bloomPost, *blurPost;
 
 GameMap * gamemap;
 Hero * hero;
+Enemy * e;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -224,7 +227,8 @@ bool installShaders(){
 }
 
 void installMeshes(){
-    LoadManager::getMesh("sphere.obj");
+    LoadManager::getMesh("cube-textures.obj");
+    LoadManager::getMesh("sphere-tex.obj");
 }
 
 void createGaussBlurShader(){
@@ -286,8 +290,8 @@ void setupWorld(){
 
 void setupGame(){
     int rows = 36, cols = 30;
-
     stringstream mapss;
+
     mapss 
         << "cccccccccc...................."
         << "c............................."
@@ -326,13 +330,16 @@ void setupGame(){
         << "c......................c......"
         << "cccccccccccccccccccccccccccccc";
 
-
     gamemap = new GameMap(mapss.str(), rows, cols);
     gamemap->init();
 
     hero = new Hero(gamemap, 0);
     hero->init();
     gamemap->addChild(hero); 
+
+    e = new Enemy(gamemap, 1);
+    e->init();
+    gamemap->addChild(e);
 }
 
 void setupRenderEngine(){
@@ -401,7 +408,6 @@ int main(int argc, char **argv)
     objs.push_back(gamemap);
    
     assert(glGetError() == GL_NO_ERROR);
-
 
     double time = glfwGetTime();
     int frames = 0;

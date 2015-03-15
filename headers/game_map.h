@@ -13,6 +13,7 @@
 
 #include "image.h"
 #include "texture.h"
+#include "collision_manager.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -22,6 +23,30 @@
 #include <string>
 
 using namespace std;
+
+class GroundPiece : public Object3D{
+public:
+    GroundPiece(glm::mat4 _translateMat) : translateMat(_translateMat){
+
+    }
+
+    void init(){
+        mesh = LoadManager::getMesh("cube-textures.obj");
+
+        addTransformation(translateMat);
+
+        CollisionManager::addGround(this);
+    }
+
+    void drawObject(){
+
+    }
+    void onCollision(Object3D * obj){
+    }
+
+private:
+    glm::mat4 translateMat;
+};
 
 class GameMap : public Object3D{
 public:
@@ -53,9 +78,13 @@ public:
         tex = TextureManager::getTexture("enemy.bmp")->getTexture();
         atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
 
+
+        GroundPiece * piece;
         for (int index = 0; index < mapRowsSize*mapColsSize; index++){
             switch (mapLayout[index]){
             case DEFAULT_CUBE:
+                piece = new GroundPiece(glm::translate(glm::mat4(1.0f), getCubePos(index)));
+                piece->init();
                 cubesMatrices.push_back(glm::translate(glm::mat4(1.0f), getCubePos(index)));
                 break;
             case EMPTY_SPACE:
@@ -165,6 +194,9 @@ public:
 
     int getMapPos(int i, int j){
         return i*mapColsSize + j;
+    }
+
+    void onCollision(Object3D * obj){
     }
 
 private:

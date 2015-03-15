@@ -2,7 +2,7 @@
 #define OBJECT3D_H
 
 #include <map>
-#include <vector>
+#include <list>
 #include <stack>
 
 #include "mesh.h"
@@ -42,6 +42,16 @@ public:
     GLuint getArrayBuffer(std::string bufferName);
     glm::mat4 getModelMatrix();
 
+    glm::vec3 getMinPoint();
+    glm::vec3 getMaxPoint();
+    int getCollisionTypeMask();
+    int getCollideWithMask();
+    void setCollisionsMask(int typeMask, int collideMask);
+
+    bool collide(Object3D * obj);
+    void checkCollision(Object3D * obj);
+    virtual void onCollision(Object3D * obj) = 0;
+
     void draw();
     void drawElements();
     virtual void drawObject() = 0;
@@ -57,13 +67,15 @@ protected:
     void resetMatrix();
 
 private:
-    std::vector<Object3D *> children;
+    std::list<Object3D *> children;
 
     std::map<std::string, GLuint> arrayBuffers;
     GLuint elementBuffer;
 
     std::stack <glm::mat4> matrixStack;
     glm::mat4 modelTransform;
+
+    int collisionTypeMask, collideWithMask;
 };
 
 #endif

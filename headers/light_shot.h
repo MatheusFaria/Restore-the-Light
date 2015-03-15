@@ -6,6 +6,7 @@
 #include "light.h"
 #include "material.h"
 #include "virtual_camera.h"
+#include "collision_manager.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -29,11 +30,16 @@ public:
             "geometry-pass-map-vertex.glsl",
             "geometry-pass-map-fragment.glsl");
 
+        collisionListPos = CollisionManager::addShot(this);
+
         light = new Light(glm::vec3(1), pos, glm::vec3(0, 0.3, 0));
         LightManager::addLight(light);
     }
 
     void drawObject(){
+        if (finished)
+            return;
+
         glUseProgram(shader->getId());
 
         enableAttrArray3f("aPosition", "posBufObj");
@@ -80,10 +86,18 @@ public:
         light->fallOff = glm::vec3(0, glm::distance(pos, initialPos)/10, 0);
 
         if (glm::distance(pos, initialPos) >= power){
-            LightManager::removeLight(light);
-            parent->removeChild(this);
+            die();
             return;
         }
+
+        CollisionManager::checkCollisionWithGround(this);
+        if (!finished)
+            CollisionManager::checkCollisionWithEnemy(this);
+    }
+
+    void onCollision(Object3D * obj){
+        die();
+        return;
     }
 
 private:
@@ -91,6 +105,16 @@ private:
     glm::vec3 dir;
     float velocity, power;
     Light * light;
+
+    bool finished = false;
+    std::list<Object3D *>::iterator collisionListPos;
+
+    void die(){
+        CollisionManager::removeShot(collisionListPos);
+        LightManager::removeLight(light);
+        parent->removeChild(this);
+        finished = true;
+    }
 };
 
 #endif

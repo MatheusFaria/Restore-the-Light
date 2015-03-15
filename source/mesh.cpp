@@ -1,11 +1,5 @@
 #include "mesh.h"
 
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 3
-*/
-
 #include <iostream>
 
 #include "glm/glm.hpp"
@@ -21,6 +15,7 @@ Mesh::Mesh(std::string _filename): filename(_filename){
 void Mesh::init(){
     resizeObj();
     calculateNormals();
+    calculateBoundingBox();
 }
 
 std::vector<float> Mesh::getNormals(){
@@ -130,9 +125,39 @@ void Mesh::resizeObj(){
     }
 }
 
+void Mesh::calculateBoundingBox(){
+    float minX, minY, minZ;
+    float maxX, maxY, maxZ;
+
+    minX = minY = minZ = 1.1754E+38F;
+    maxX = maxY = maxZ = -1.1754E+38F;
+
+    for (size_t v = 0; v < shape[0].mesh.positions.size() / 3; v++) {
+        if (shape[0].mesh.positions[3 * v + 0] < minX) minX = shape[0].mesh.positions[3 * v + 0];
+        if (shape[0].mesh.positions[3 * v + 0] > maxX) maxX = shape[0].mesh.positions[3 * v + 0];
+
+        if (shape[0].mesh.positions[3 * v + 1] < minY) minY = shape[0].mesh.positions[3 * v + 1];
+        if (shape[0].mesh.positions[3 * v + 1] > maxY) maxY = shape[0].mesh.positions[3 * v + 1];
+
+        if (shape[0].mesh.positions[3 * v + 2] < minZ) minZ = shape[0].mesh.positions[3 * v + 2];
+        if (shape[0].mesh.positions[3 * v + 2] > maxZ) maxZ = shape[0].mesh.positions[3 * v + 2];
+    }
+
+    min = glm::vec3(minX, minY, minZ);
+    max = glm::vec3(maxX, maxY, maxZ);
+}
+
 void Mesh::loadShapes(){
     std::string err = tinyobj::LoadObj(shape, materials, filename.c_str());
     if (!err.empty()) {
         std::cerr << err << std::endl;
     }
+}
+
+glm::vec3 Mesh::getMinPoint(){
+    return min;
+}
+
+glm::vec3 Mesh::getMaxPoint(){
+    return max;
 }

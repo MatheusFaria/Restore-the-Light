@@ -1,16 +1,11 @@
 #ifndef MESH_H
 #define MESH_H
 
-/*
-* Author: Matheus de Sousa Faria
-* CPE 471 - Introduction to Computer Graphics
-* Program 3
-*/
-
 #include <string>
 #include <vector>
 
 #include "tiny_obj_loader.h"
+#include "glm/glm.hpp"
 
 class Mesh{
 public:
@@ -24,6 +19,8 @@ public:
     std::vector<unsigned int> getIndices();
     std::string getFileName();
     std::vector<float> getTexCoords();
+    glm::vec3 getMinPoint();
+    glm::vec3 getMaxPoint();
 
 private:
     std::string filename;
@@ -32,9 +29,12 @@ private:
     std::vector<tinyobj::shape_t> shape;
     std::vector<tinyobj::material_t> materials;
 
+    glm::vec3 min, max;
+
     void calculateNormals();
     void resizeObj();
     void loadShapes();
+    void calculateBoundingBox();
 };
 
 #endif
