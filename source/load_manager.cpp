@@ -36,10 +36,10 @@ bool LoadManager::loadShader(std::string vertex, std::string fragment){
     return true;
 }
 
-Mesh * LoadManager::getMesh(std::string name){
+Mesh * LoadManager::getMesh(std::string name, bool resize){
     if (meshes.find(name) == meshes.end()){
         meshes[name] = new Mesh(joinPath(meshFolder, name));
-        meshes[name]->init();
+        meshes[name]->init(resize);
     }
     return meshes[name];
 }

@@ -12,7 +12,7 @@ public:
     Mesh();
     Mesh(std::string _filename);
 
-    void init();
+    void init(bool enableResize = true);
 
     std::vector<float> getNormals();
     std::vector<float> getVertices();

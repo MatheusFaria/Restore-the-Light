@@ -229,6 +229,16 @@ bool installShaders(){
 void installMeshes(){
     LoadManager::getMesh("cube-textures.obj");
     LoadManager::getMesh("sphere-tex.obj");
+    LoadManager::getMesh("blue-creature/head.obj", false);
+    LoadManager::getMesh("blue-creature/leftarm.obj", false);
+    LoadManager::getMesh("blue-creature/rightarm.obj", false);
+    LoadManager::getMesh("blue-creature/lefteyelid.obj", false);
+    LoadManager::getMesh("blue-creature/righteyelid.obj", false);
+    LoadManager::getMesh("blue-creature/leftfoot.obj", false);
+    LoadManager::getMesh("blue-creature/rightfoot.obj", false);
+    LoadManager::getMesh("blue-creature/leftthigh.obj", false);
+    LoadManager::getMesh("blue-creature/rightthigh.obj", false);
+    LoadManager::getMesh("blue-creature/torso.obj", false);
 }
 
 void createGaussBlurShader(){
@@ -337,7 +347,7 @@ void setupGame(){
     hero->init();
     gamemap->addChild(hero); 
 
-    e = new Enemy(gamemap, 1);
+    e = new Enemy(gamemap, 4);
     e->init();
     gamemap->addChild(e);
 }
@@ -424,6 +434,7 @@ int main(int argc, char **argv)
     else{
         do{
             hero->checkInput(window);
+            e->checkInput(window);
 
             gBuffer->pass(objs);
 

@@ -34,6 +34,7 @@ public:
 
         light = new Light(glm::vec3(1), pos, glm::vec3(0, 0.3, 0));
         LightManager::addLight(light);
+        setCollisionsMask(3, 0);
     }
 
     void drawObject(){

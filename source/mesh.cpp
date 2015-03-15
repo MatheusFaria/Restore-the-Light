@@ -12,8 +12,9 @@ Mesh::Mesh(std::string _filename): filename(_filename){
     normals = std::vector<float>(shape[0].mesh.positions.size(), 0);
 }
 
-void Mesh::init(){
-    resizeObj();
+void Mesh::init(bool enableResize){
+    if (enableResize)
+        resizeObj();
     calculateNormals();
     calculateBoundingBox();
 }

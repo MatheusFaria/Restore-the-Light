@@ -12,7 +12,7 @@ class LoadManager {
 public:
     static Shader * getShader(std::string vertex, std::string fragment);
     static bool loadShader(std::string vertex, std::string fragment);
-    static Mesh * getMesh(std::string name);
+    static Mesh * getMesh(std::string name, bool resize = true);
     static Image * getImage(std::string name);
 
 private:

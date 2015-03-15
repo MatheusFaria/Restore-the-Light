@@ -163,11 +163,6 @@ namespace Render{
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /*std::cout << "----Light-----\n";
-        std::cout << "Points: " << pointLights.size() << "\n";
-        std::cout << "Spot: " << spotLights.size() << "\n";
-        std::cout << "Directional: " << directionalLights.size() << "\n";
-        std::cout << "--------------\n";*/
         passPointLights(processor, pointLights);
         passSpotLights(processor, spotLights);
         passDirectionalLights(processor, directionalLights);

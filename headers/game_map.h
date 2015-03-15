@@ -36,6 +36,7 @@ public:
         addTransformation(translateMat);
 
         CollisionManager::addGround(this);
+        setCollisionsMask(1, 0);
     }
 
     void drawObject(){

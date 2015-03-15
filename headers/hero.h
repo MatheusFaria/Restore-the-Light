@@ -11,6 +11,7 @@
 #include "virtual_camera.h"
 #include "log.h"
 #include "light.h"
+#include "collision_manager.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -39,7 +40,7 @@ public:
         initialPos = pos;
 
         setControlMode(FPS);
-        velocity = 0.3f;
+        velocity = 0.03f;
         floatVeloctiy = 0.008f;
         shotTime = 0;
         lastDir = glm::vec3(0, 0, -1);
@@ -48,6 +49,9 @@ public:
         LightManager::addLight(light);
 
         gLight = new Light(glm::vec3(1, 1, 1), glm::vec3(0, -1, 0));
+
+        setCollisionsMask(2, 0);
+        CollisionManager::setHero(this);
     }
 
     void drawObject(){
@@ -92,6 +96,9 @@ public:
             disableAttrArray("aNormal");
             unbindAll();
         }
+
+        CollisionManager::checkCollisionWithEnemy(this);
+
     }
 
     float rand_float(){
@@ -143,6 +150,8 @@ public:
     }
 
     void onCollision(Object3D * obj){
+        if (obj->getCollisionTypeMask() == 4){
+        }
     }
 
 private:
