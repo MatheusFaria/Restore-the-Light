@@ -18,7 +18,7 @@ public:
     void init(){
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
-        //loadTextureBuffer("texBufObj");
+        loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
         collisionListPos = CollisionManager::addEnemy(this);
@@ -54,19 +54,19 @@ public:
     Enemy(GameMap * _gameMap, int _cubePos) : gameMap(_gameMap), currentCube(_cubePos){}
 
     void init(){
-        mesh = LoadManager::getMesh("blue-creature/torso.obj");
+        mesh = LoadManager::getMesh("cube-textures.obj");
 
         loadVertexBuffer("posBufObj");
         loadNormalBuffer("norBufObj");
-        //loadTextureBuffer("texBufObj");
+        loadTextureBuffer("texBufObj");
         loadElementBuffer();
 
         pos = gameMap->getCubePos(currentCube);
-        pos.y += 4;
+        pos.y += 3;
 
         shader = LoadManager::getShader(
-            "geometry-pass-map-vertex.glsl",
-            "geometry-pass-map-fragment.glsl");
+            "geometry-pass-map-texture-vertex.glsl",
+            "geometry-pass-map-texture-fragment.glsl");
 
         parts.push_back(new BodyPart(LoadManager::getMesh("blue-creature/head.obj") , shader, this));
         parts.push_back(new BodyPart(LoadManager::getMesh("blue-creature/torso.obj"), shader, this));
@@ -79,6 +79,7 @@ public:
         parts.push_back(new BodyPart(LoadManager::getMesh("blue-creature/leftfoot.obj"), shader, this));
         parts.push_back(new BodyPart(LoadManager::getMesh("blue-creature/rightfoot.obj"), shader, this));
 
+
         for (int i = 0; i < parts.size(); i++){
             parts[i]->init();
         }
@@ -86,8 +87,8 @@ public:
         y = -0.74;
         z = 0.27;
 
-        //tex = TextureManager::getTexture("enemy.bmp")->getTexture();
-        //atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
+        tex = TextureManager::getTexture("enemy-shot.bmp")->getTexture();
+        atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
     }
 
     void drawObject(){
@@ -96,10 +97,19 @@ public:
 
         glUseProgram(shader->getId());
 
-        Material::SetMaterial(Material::EMERALD, shader);
+        Material::SetMaterial(Material::BLUE_PLASTIC, shader, false, false);
         glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
 
         glUniform1i(shader->getHandle("uCompleteGlow"), 0);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glUniform1i(shader->getHandle("uTexID"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, atex);
+        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
+
 
         bindUniformMatrix4f(
             shader->getHandle("uProjMatrix"),
@@ -314,6 +324,7 @@ public:
 
         disableAttrArray("aPosition");
         disableAttrArray("aNormal");
+        disableAttrArray("aTexCoord");
         unbindAll();
 
         update();
@@ -375,6 +386,7 @@ private:
 
     glm::vec3 pos;
 
+    GLuint tex, atex;
 
     const int head = 0, torso = 1, leftarm = 2, rightarm = 3,
         lefteyelid = 4, righteyelid = 5, leftthigh = 6, rightthigh = 7,
@@ -384,6 +396,7 @@ private:
     void enablePartArrays(int part){
         parts[part]->enableAttrArray3f("aPosition", "posBufObj");
         parts[part]->enableAttrArray3f("aNormal", "norBufObj");
+        parts[part]->enableAttrArray3f("aTexCoord", "texBufObj");
         parts[part]->bindElements();
     }
 

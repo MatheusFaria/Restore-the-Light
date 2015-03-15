@@ -111,6 +111,8 @@ private:
     std::list<Object3D *>::iterator collisionListPos;
 
     void die(){
+        if (finished)
+            return;
         CollisionManager::removeShot(collisionListPos);
         LightManager::removeLight(light);
         parent->removeChild(this);
