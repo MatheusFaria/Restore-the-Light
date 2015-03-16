@@ -39,7 +39,7 @@ public:
     }
 
     void kill(){
-        std::cout << mesh->getFileName() << std::endl;
+        //std::cout << mesh->getFileName() << std::endl;
         CollisionManager::removeEnemy(collisionListPos);
     }
 
@@ -87,29 +87,49 @@ public:
         y = -0.74;
         z = 0.27;
 
-        tex = TextureManager::getTexture("enemy-shot.bmp")->getTexture();
+        tex = TextureManager::getTexture("enemy.bmp")->getTexture();
+        texShot = TextureManager::getTexture("enemy-shot.bmp")->getTexture();
+        atexShot = TextureManager::getTexture("enemy-shot-alpha.bmp")->getTexture();
         atex = TextureManager::getTexture("enemy-alpha.bmp")->getTexture();
     }
 
     void drawObject(){
-        if (finished)
-            return;
-
+        bool removeFlag = false;
         glUseProgram(shader->getId());
 
         Material::SetMaterial(Material::BLUE_PLASTIC, shader, false, false);
-        glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
 
-        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
+        if (finished){
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texShot);
+            glUniform1i(shader->getHandle("uTexID"), 0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glUniform1i(shader->getHandle("uTexID"), 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, atexShot);
+            glUniform1i(shader->getHandle("uAlphaTexID"), 1);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, atex);
-        glUniform1i(shader->getHandle("uAlphaTexID"), 1);
+            double timePercent = (glfwGetTime() - deathTime) / howLongToDie;
+            if (timePercent >= 1.0){
+                timePercent = 1.0;
+                removeFlag = true;
+            }
 
+            glUniform3f(shader->getHandle("UeColor"), timePercent, timePercent, timePercent);
+        }
+        else{
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, tex);
+            glUniform1i(shader->getHandle("uTexID"), 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, atex);
+            glUniform1i(shader->getHandle("uAlphaTexID"), 1);
+
+            glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+        }
+
+
+        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
 
         bindUniformMatrix4f(
             shader->getHandle("uProjMatrix"),
@@ -327,11 +347,10 @@ public:
         disableAttrArray("aTexCoord");
         unbindAll();
 
-        update();
-    }
-
-    void update(){
-
+        if (removeFlag){
+            if (parent != NULL)
+                parent->removeChild(this);
+        }
     }
 
     void onCollision(Object3D *obj){
@@ -342,8 +361,7 @@ public:
             for (int i = 0; i < parts.size(); i++){
                 parts[i]->kill();
             }
-            if (parent != NULL)
-                parent->removeChild(this);
+            deathTime = glfwGetTime();   
             finished = true;
         }
     }
@@ -383,10 +401,11 @@ private:
     int currentCube;
     std::vector<BodyPart *> parts;
     bool finished = false;
+    double deathTime, howLongToDie = 1.5;
 
     glm::vec3 pos;
 
-    GLuint tex, atex;
+    GLuint tex, atex, texShot, atexShot;
 
     const int head = 0, torso = 1, leftarm = 2, rightarm = 3,
         lefteyelid = 4, righteyelid = 5, leftthigh = 6, rightthigh = 7,
