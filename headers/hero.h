@@ -306,7 +306,7 @@ private:
         else{
             dir = lastDir;
         }
-        LightShot * l = new LightShot(pos, dir, 0.07, 10);
+        LightShot * l = new LightShot(pos, dir, 0.7, 10);
         l->init();
 
         gameMap->addChild(l);

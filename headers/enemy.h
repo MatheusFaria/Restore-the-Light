@@ -94,6 +94,7 @@ public:
     }
 
     void drawObject(){
+        updateAnimation();
         bool removeFlag = false;
         glUseProgram(shader->getId());
 
@@ -283,6 +284,7 @@ public:
         enablePartArrays(leftfoot);
 
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0.19, -0.74, 0.27)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rightFootAngle, glm::vec3(-1, 0, 0)));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.2)));
         parts[leftfoot]->setMatrix(getModelMatrix());
 
@@ -326,6 +328,7 @@ public:
         enablePartArrays(rightfoot);
 
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(-0.19, -0.74, 0.27)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), leftFootAngle, glm::vec3(-1, 0, 0)));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.2)));
         parts[rightfoot]->setMatrix(getModelMatrix());
 
@@ -366,6 +369,41 @@ public:
         }
     }
 
+    void updateAnimation(){
+        if (rightFootMoving){
+            rightFootAngle += feetDirection*stepVelocity;
+            
+            if (rightFootAngle <= 0){
+                rightFootAngle = 0;
+                
+                rightFootMoving = false;
+                leftFootMoving = true;
+
+                feetDirection = 1;
+            }
+            else if (rightFootAngle >= maxFeetAngle){
+                rightFootAngle = maxFeetAngle;
+                feetDirection = -1;
+            }
+        }
+        else{
+            leftFootAngle += feetDirection*stepVelocity;
+
+            if (leftFootAngle <= 0){
+                leftFootAngle = 0;
+
+                rightFootMoving = true;
+                leftFootMoving = false;
+
+                feetDirection = 1;
+            }
+            else if (leftFootAngle >= maxFeetAngle){
+                leftFootAngle = maxFeetAngle;
+                feetDirection = -1;
+            }
+        }
+    }
+
     void checkInput(GLFWwindow * window){
 
         if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS){
@@ -401,11 +439,15 @@ private:
     int currentCube;
     std::vector<BodyPart *> parts;
     bool finished = false;
-    double deathTime, howLongToDie = 1.5;
+    double deathTime, howLongToDie = 1.0;
 
     glm::vec3 pos;
 
     GLuint tex, atex, texShot, atexShot;
+
+    bool rightFootMoving = true, leftFootMoving = false;
+    float rightFootAngle = 0, leftFootAngle = 0;
+    float feetDirection = 1, maxFeetAngle = 30.0f, stepVelocity = 0.8f;
 
     const int head = 0, torso = 1, leftarm = 2, rightarm = 3,
         lefteyelid = 4, righteyelid = 5, leftthigh = 6, rightthigh = 7,
