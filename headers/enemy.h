@@ -225,6 +225,7 @@ public:
         enablePartArrays(leftarm);
 
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(0.83, -0.12, -0.11)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), rightArmAngle, glm::vec3(-1, 0, 0)));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.2)));
         parts[leftarm]->setMatrix(getModelMatrix());
 
@@ -244,6 +245,7 @@ public:
         enablePartArrays(rightarm);
 
         addTransformation(glm::translate(glm::mat4(1.0f), glm::vec3(-0.69, -0.08, -0.04)));
+        addTransformation(glm::rotate(glm::mat4(1.0f), leftArmAngle, glm::vec3(-1, 0, 0)));
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.2)));
         parts[rightarm]->setMatrix(getModelMatrix());
 
@@ -370,11 +372,15 @@ public:
     }
 
     void updateAnimation(){
+        float armVelocity = maxArmAngle*stepVelocity / maxFeetAngle;
+
         if (rightFootMoving){
             rightFootAngle += feetDirection*stepVelocity;
+            leftArmAngle += feetDirection*armVelocity;
             
             if (rightFootAngle <= 0){
                 rightFootAngle = 0;
+                leftArmAngle = 0;
                 
                 rightFootMoving = false;
                 leftFootMoving = true;
@@ -383,14 +389,17 @@ public:
             }
             else if (rightFootAngle >= maxFeetAngle){
                 rightFootAngle = maxFeetAngle;
+                leftArmAngle = maxArmAngle;
                 feetDirection = -1;
             }
         }
         else{
             leftFootAngle += feetDirection*stepVelocity;
+            rightArmAngle += feetDirection*armVelocity;
 
             if (leftFootAngle <= 0){
                 leftFootAngle = 0;
+                rightArmAngle = 0;
 
                 rightFootMoving = true;
                 leftFootMoving = false;
@@ -399,6 +408,7 @@ public:
             }
             else if (leftFootAngle >= maxFeetAngle){
                 leftFootAngle = maxFeetAngle;
+                rightArmAngle = maxArmAngle;
                 feetDirection = -1;
             }
         }
@@ -447,7 +457,8 @@ private:
 
     bool rightFootMoving = true, leftFootMoving = false;
     float rightFootAngle = 0, leftFootAngle = 0;
-    float feetDirection = 1, maxFeetAngle = 30.0f, stepVelocity = 0.8f;
+    float rightArmAngle = 0, leftArmAngle = 0;
+    float feetDirection = 1, maxFeetAngle = 30.0f, maxArmAngle = 85.0f, stepVelocity = 0.8f;
 
     const int head = 0, torso = 1, leftarm = 2, rightarm = 3,
         lefteyelid = 4, righteyelid = 5, leftthigh = 6, rightthigh = 7,
