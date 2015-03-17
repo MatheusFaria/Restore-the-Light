@@ -78,7 +78,6 @@ public:
             default:
                 break;
             }
-
             lightPath.push_back(0);
         }
     }
@@ -193,6 +192,18 @@ public:
 
     void litCube(int cube){
         lightPath[cube] = 1;
+    }
+
+    void lightAllTheWay(){
+        for (int i = 0; i < lightPath.size(); i++){
+            lightPath[i] = 1;
+        }
+    }
+
+    void clearPath(){
+        for (int i = 0; i < lightPath.size(); i++){
+            lightPath[i] = 0;
+        }
     }
 
 private:

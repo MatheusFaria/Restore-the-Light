@@ -22,6 +22,7 @@
 #include "fbo.h"
 #include "render.h"
 #include "globals.h"
+#include "light_friend.h"
 
 #include "game_map.h"
 #include "hero.h"
@@ -35,6 +36,7 @@ bool g_lock_mouse = true;
 bool g_first_mouse_movement = true;
 bool doNotRun = false;
 int hot_key = 0;
+int max_enemies = 10;
 
 Render::GeometryProcessor *gBuffer;
 Render::LightProcessor *lightProcessor;
@@ -42,7 +44,8 @@ Render::PostProcessor *alphaPost, *bloomPost, *blurPost;
 
 GameMap * gamemap;
 Hero * hero;
-Enemy * e;
+vector<Enemy *> enemies;
+vector<LightFriend *> friends;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -347,9 +350,43 @@ void setupGame(){
     hero->init();
     gamemap->addChild(hero); 
 
-    e = new Enemy(gamemap, 4);
-    e->init();
-    gamemap->addChild(e);
+    vector<int> enemiesPositions;
+
+    enemiesPositions.push_back(gamemap->getMapPos(0, 4));
+    enemiesPositions.push_back(gamemap->getMapPos(6, 0));
+    enemiesPositions.push_back(gamemap->getMapPos(11, 8));
+    enemiesPositions.push_back(gamemap->getMapPos(6, 8));
+    enemiesPositions.push_back(gamemap->getMapPos(11, 16));
+    enemiesPositions.push_back(gamemap->getMapPos(14, 24));
+    enemiesPositions.push_back(gamemap->getMapPos(19, 5));
+    enemiesPositions.push_back(gamemap->getMapPos(28, 7));
+    enemiesPositions.push_back(gamemap->getMapPos(35, 13));
+    enemiesPositions.push_back(gamemap->getMapPos(31, 23));
+
+    max_enemies = enemiesPositions.size();
+    for (int i = 0; i < max_enemies; i++){
+        enemies.push_back(new Enemy(gamemap, enemiesPositions[i], 0, glm::vec3(0)));
+    }
+    if (max_enemies > 0){
+        gamemap->addChild(enemies[0]);
+        enemies[0]->init();
+    }
+
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(0, 4)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(6, 0)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(11, 8)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(6, 8)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(11, 16)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(14, 24)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(19, 5)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(28, 7)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(35, 13)));
+    friends.push_back(new LightFriend(gamemap, gamemap->getMapPos(31, 23)));
+
+    if (max_enemies > 0){
+        gamemap->addChild(friends[0]);
+        friends[0]->init();
+    }
 }
 
 void setupRenderEngine(){
@@ -421,6 +458,8 @@ int main(int argc, char **argv)
 
     double time = glfwGetTime();
     int frames = 0;
+    int currentEnemy = 0;
+    bool win = false;
 
     if (doNotRun){
         do{
@@ -434,7 +473,20 @@ int main(int argc, char **argv)
     else{
         do{
             hero->checkInput(window);
-            e->checkInput(window);
+            if (currentEnemy < max_enemies){
+                if (enemies[currentEnemy]->isDead()){
+                    friends[currentEnemy]->lightUp();
+
+                    currentEnemy++;
+
+                    if (currentEnemy < max_enemies){
+                        gamemap->addChild(enemies[currentEnemy]);
+                        enemies[currentEnemy]->init();
+                        gamemap->addChild(friends[currentEnemy]);
+                        friends[currentEnemy]->init();
+                    }
+                }
+            }
 
             gBuffer->pass(objs);
 

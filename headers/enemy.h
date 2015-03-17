@@ -51,7 +51,8 @@ private:
 
 class Enemy: public Object3D{
 public:
-    Enemy(GameMap * _gameMap, int _cubePos) : gameMap(_gameMap), currentCube(_cubePos){}
+    Enemy(GameMap * _gameMap, int _cubePos, float _bodyAngle, glm::vec3 _direction) 
+        : gameMap(_gameMap), currentCube(_cubePos), bodyAngle(_bodyAngle), direction(_direction){}
 
     void init(){
         mesh = LoadManager::getMesh("cube-textures.obj");
@@ -94,8 +95,10 @@ public:
     }
 
     void drawObject(){
+        if (removeEnemy)
+            return;
+
         updateAnimation();
-        bool removeFlag = false;
         glUseProgram(shader->getId());
 
         Material::SetMaterial(Material::BLUE_PLASTIC, shader, false, false);
@@ -112,7 +115,7 @@ public:
             double timePercent = (glfwGetTime() - deathTime) / howLongToDie;
             if (timePercent >= 1.0){
                 timePercent = 1.0;
-                removeFlag = true;
+                removeEnemy = true;
             }
 
             glUniform3f(shader->getHandle("UeColor"), timePercent, timePercent, timePercent);
@@ -147,6 +150,7 @@ public:
         enablePartArrays(head);
 
         addTransformation(glm::translate(glm::mat4(1.0f), pos));
+        addTransformation(glm::rotate(glm::mat4(1.0f), bodyAngle, glm::vec3(0, 1, 0)));
         pushMatrix();
         addTransformation(glm::scale(glm::mat4(1.0f), glm::vec3(0.2)));
         parts[head]->setMatrix(getModelMatrix());
@@ -352,7 +356,7 @@ public:
         disableAttrArray("aTexCoord");
         unbindAll();
 
-        if (removeFlag){
+        if (removeEnemy){
             if (parent != NULL)
                 parent->removeChild(this);
         }
@@ -363,12 +367,19 @@ public:
             return;
 
         if (obj->getCollisionTypeMask() == 3){
-            for (int i = 0; i < parts.size(); i++){
-                parts[i]->kill();
-            }
-            deathTime = glfwGetTime();   
-            finished = true;
+            kill();
         }
+    }
+
+    void kill(){
+        if (finished)
+            return;
+
+        for (int i = 0; i < parts.size(); i++){
+            parts[i]->kill();
+        }
+        deathTime = glfwGetTime();
+        finished = true;
     }
 
     void updateAnimation(){
@@ -442,6 +453,11 @@ public:
         }
     }
 
+
+    bool isDead(){
+        return removeEnemy;
+    }
+
 private:
     float z, y, x;
 
@@ -450,11 +466,13 @@ private:
     std::vector<BodyPart *> parts;
     bool finished = false;
     double deathTime, howLongToDie = 1.0;
+    bool removeEnemy = false;
 
-    glm::vec3 pos;
+    glm::vec3 pos, direction;
 
     GLuint tex, atex, texShot, atexShot;
 
+    float bodyAngle = 0;
     bool rightFootMoving = true, leftFootMoving = false;
     float rightFootAngle = 0, leftFootAngle = 0;
     float rightArmAngle = 0, leftArmAngle = 0;

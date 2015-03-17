@@ -118,7 +118,10 @@ public:
         }
         
         if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS){
-            LightManager::addLight(gLight);
+            gameMap->lightAllTheWay();
+        }
+        else if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS){
+            gameMap->clearPath();
         }
 
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){

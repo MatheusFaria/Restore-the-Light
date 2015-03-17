@@ -173,12 +173,14 @@ bool Object3D::collide(Object3D * obj){
               objMax = obj->getMaxPoint(), objMin = obj->getMinPoint();
     
     /*std::cout << "\n\n----------------\nA\n";
+    std::cout << getCollisionTypeMask() << std::endl;
     std::cout << max.x << " " << max.y << " " << max.z << std::endl;
     std::cout << min.x << " " << min.y << " " << min.z << std::endl;
     std::cout << "B\n";
+    std::cout << obj->getCollisionTypeMask() << std::endl;
     std::cout << objMax.x << " " << objMax.y << " " << objMax.z << std::endl;
     std::cout << objMin.x << " " << objMin.y << " " << objMin.z << std::endl;*/
-
+   
     return(
         (
             //Collision of A with B
