@@ -6,6 +6,17 @@ Restore the light is a game where the hero is a ball of light. And his world is 
 
 This is my final project for the introduction to computer graphics course at Cal Poly ([CPE 471]). In this project I learned and implemented several computer graphics concepts: Blinn-Phong Illumination Model, Hierarchical Modelling, Texture Mapping, Framebuffer Objects, Deferred Lighting, and Bloom Shading. To practice those concepts, I created this simple 3D application.
 
+Table of Contents
+-----------------
+1. [Implented Concepts]
+  - [Framebuffer Objects]
+  - [Deferred Lighting]
+  - [Bloom Shader]
+2. [Libraries]
+3. [Platforms]
+4. [How to Install]
+5. [Credits and Contacts]
+
 Implemented Concepts
 --------------------
 
@@ -122,6 +133,13 @@ Credits and Contacts
 
 [Framebuffer Objects]:#framebuffer-objects
 [Framebuffer Object]:#framebuffer-objects
+[Implented Concepts]:#implemented-concepts
+[Deferred Lighting]:#deferred-lighting
+[Bloom Shader]:#bloom-shader
+[Libraries]:#libraries
+[Platforms]:#platforms
+[How to Install]:#how-to-install
+[Credits and Contacts]:#credits-and-contacts
 [CPE 471]:http://users.csc.calpoly.edu/~zwood/teaching/csc471/csc471.html
 [Lighthouse3D - OpenGL Framebuffer Objects]:http://www.lighthouse3d.com/tutorials/opengl-short-tutorials/opengl_framebuffer_objects/
 [OpenGl Wiki - Framebuffer Objects]:https://www.opengl.org/wiki/Framebuffer_Object
