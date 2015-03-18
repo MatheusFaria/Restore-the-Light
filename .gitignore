@@ -17,3 +17,6 @@ Thumbs.db
 
 # CMake Build folder
 build/
+
+#Executables
+restore-the-light.exe
