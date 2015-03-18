@@ -2,6 +2,8 @@
 cmake_minimum_required (VERSION 2.6)
 project (Restore_the_Light)
 
+# CMakeLists modified from: http://www.opengl-tutorial.org/download/
+
 find_package(OpenGL REQUIRED)
 
 
