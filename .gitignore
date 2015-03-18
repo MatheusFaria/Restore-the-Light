@@ -1,10 +1,19 @@
+#Backup Files
 *.bak
+
+# Temp Files
 *.swp
 *.swo
 *~
+
+# VS Files and Folders
 Debug/
-libs/
-*.dll
 *.vcxproj
 *.filters
+
+# Windows Files
+*.dll
 Thumbs.db
+
+# CMake Build folder
+build/

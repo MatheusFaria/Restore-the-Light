@@ -1,0 +1,59 @@
+### https://github.com/Danimoth/gitattributes
+#sources
+*.C text
+*.cc text
+*.cxx text
+*.cpp text
+*.c++ text
+*.hpp text
+*.h text
+*.h++ text
+*.hh text
+
+# Compiled Object files
+*.slo binary
+*.lo binary
+*.o binary
+*.obj binary
+
+# Precompiled Headers
+*.gch binary
+*.pch binary
+
+# Compiled Dynamic libraries
+*.so binary
+*.dylib binary
+*.dll binary
+
+# Compiled Static libraries
+*.lai binary
+*.la binary
+*.a binary
+*.lib binary
+
+# Executables
+*.exe binary
+*.out binary
+*.app binary
+
+###
+
+# Meshs and Shaders
+*.obj text
+*.glsl text
+
+# Text Files
+*.txt text
+*.md text
+
+# Images
+*.png binary
+*.bmp binary
+*.jpg binary
+
+# Executables
+*.exe binary
+
+
+### http://www.davidlaing.com/2012/09/19/customise-your-gitattributes-to-become-a-git-ninja/
+* text=auto eol=lf
