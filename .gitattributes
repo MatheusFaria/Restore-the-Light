@@ -47,13 +47,10 @@
 *.md text
 
 # Images
-*.png binary
-*.bmp binary
-*.jpg binary
+*.png binary eol=crlf
+*.bmp binary eol=crlf
+*.jpg binary eol=crlf
 
 # Executables
 *.exe binary
 
-
-### http://www.davidlaing.com/2012/09/19/customise-your-gitattributes-to-become-a-git-ninja/
-* text=auto eol=lf
