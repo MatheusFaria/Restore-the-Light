@@ -135,18 +135,21 @@ SOURCE_GROUP(Shaders "restore-the-light/shaders/.*glsl$" )
 
 
 if (NOT ${CMAKE_GENERATOR} MATCHES "Xcode" )
+#Copying new resources to the build folder
 add_custom_command(
-   TARGET restore-the-light PRE_BUILD
+   TARGET restore-the-light POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/restore-the-light/shaders" "${CMAKE_CURRENT_BINARY_DIR}/shaders"
 )
 add_custom_command(
-   TARGET restore-the-light PRE_BUILD
+   TARGET restore-the-light POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/restore-the-light/objects" "${CMAKE_CURRENT_BINARY_DIR}/objects"
 )
 add_custom_command(
-   TARGET restore-the-light PRE_BUILD
+   TARGET restore-the-light POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/restore-the-light/textures" "${CMAKE_CURRENT_BINARY_DIR}/textures"
 )
+
+#Copying the compiled project to the project folder, out of the build directory
 add_custom_command(
    TARGET restore-the-light POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/restore-the-light${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/restore-the-light/"
