@@ -10,6 +10,11 @@
 #include "virtual_camera.h"
 
 Object3D::Object3D() : mesh(NULL), shader(NULL) {
+    parent = NULL;
+    matrixStack.push(glm::mat4(1.0f));
+    modelTransform = glm::mat4(1.0f);
+    collisionTypeMask = 0;
+    collideWithMask = 0;
 }
 
 Object3D::Object3D(Mesh * _mesh, Shader * _shader) : mesh(_mesh), shader(_shader) {
