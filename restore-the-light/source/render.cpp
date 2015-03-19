@@ -16,7 +16,7 @@ namespace Render{
     Processor::Processor(int _width, int _height, int _nTextures, bool _depth, int _nFBOs, glm::vec4 _refreshColor) :
         width(_width), height(_height), nTextures(_nTextures), depth(_depth),
         nFBOs(_nFBOs), refreshColor(_refreshColor){
-        outFBO = nullptr;
+        outFBO = NULL;
     }
 
     void Processor::init(){
@@ -103,7 +103,7 @@ namespace Render{
     }
 
     bool Processor::hasOutput(){
-        return outFBO != nullptr;
+        return outFBO != NULL;
     }
 
     FBO * Processor::getOutFBO(){
@@ -123,7 +123,7 @@ namespace Render{
         glEnable(GL_DEPTH_TEST);
 
         glViewport(0, 0, width, height);
-        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+        glClearColor(refreshColor.x, refreshColor.y, refreshColor.z, refreshColor.w);
 
         fbos[0]->enable();
 
@@ -153,7 +153,7 @@ namespace Render{
     void LightProcessor::pass(Processor * processor, std::list<Light *> pointLights, 
                                 std::list<Light *> spotLights, std::list<Light *> directionalLights){
         glViewport(0, 0, width, height);
-        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+        glClearColor(refreshColor.x, refreshColor.y, refreshColor.z, refreshColor.w);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -221,7 +221,7 @@ namespace Render{
 
             glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
 
-            glUniform3f(pointShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(pointShader->getHandle("uLightColor"), light->color.x, light->color.y, light->color.z);
             glUniform3f(pointShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(pointShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
 
@@ -269,7 +269,7 @@ namespace Render{
 
             glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
 
-            glUniform3f(pointShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(pointShader->getHandle("uLightColor"), light->color.x, light->color.y, light->color.z);
             glUniform3f(pointShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(pointShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
 
@@ -321,7 +321,7 @@ namespace Render{
             glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
             glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
 
-            glUniform3f(spotShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(spotShader->getHandle("uLightColor"), light->color.x, light->color.y, light->color.z);
             glUniform3f(spotShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(spotShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
             glUniform3f(spotShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
@@ -373,7 +373,7 @@ namespace Render{
             glm::vec4 lightPos = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->pos, 1);
             glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
 
-            glUniform3f(spotShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(spotShader->getHandle("uLightColor"), light->color.x, light->color.y, light->color.z);
             glUniform3f(spotShader->getHandle("uLightPos"), lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(spotShader->getHandle("uLightFallOff"), light->fallOff.x, light->fallOff.y, light->fallOff.z);
             glUniform3f(spotShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
@@ -421,7 +421,7 @@ namespace Render{
 
             glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
 
-            glUniform3f(directionalShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(directionalShader->getHandle("uLightColor"), light->color.x, light->color.y, light->color.z);
             glUniform3f(directionalShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -464,7 +464,7 @@ namespace Render{
 
             glm::vec4 lightDir = CamManager::currentCam()->getViewMatrix() * glm::vec4(light->dir, 0);
 
-            glUniform3f(directionalShader->getHandle("uLightColor"), light->color.r, light->color.g, light->color.b);
+            glUniform3f(directionalShader->getHandle("uLightColor"), light->color.x, light->color.y, light->color.z);
             glUniform3f(directionalShader->getHandle("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
 
             glUniformMatrix4fv(directionalShader->getHandle("uMVP"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
@@ -546,7 +546,7 @@ namespace Render{
 
         glViewport(0, 0, width, height);
         glUseProgram(blurShader->getId());
-        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+        glClearColor(refreshColor.x, refreshColor.y, refreshColor.z, refreshColor.w);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 
@@ -591,7 +591,7 @@ namespace Render{
         glViewport(0, 0, width, height);
 
         glUseProgram(op->getId());
-        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+        glClearColor(refreshColor.x, refreshColor.y, refreshColor.z, refreshColor.w);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 
@@ -623,7 +623,7 @@ namespace Render{
         glViewport(0, 0, width, height);
 
         glUseProgram(op->getId());
-        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+        glClearColor(refreshColor.x, refreshColor.y, refreshColor.z, refreshColor.w);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 
@@ -659,7 +659,7 @@ namespace Render{
         glViewport(0, 0, width, height);
 
         glUseProgram(op->getId());
-        glClearColor(refreshColor.r, refreshColor.g, refreshColor.b, refreshColor.a);
+        glClearColor(refreshColor.x, refreshColor.y, refreshColor.z, refreshColor.w);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuf);
 

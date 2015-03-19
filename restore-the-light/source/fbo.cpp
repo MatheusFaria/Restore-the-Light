@@ -1,6 +1,7 @@
 #include "fbo.h"
 
 #include <iostream>
+#include <stdio.h>
 
 #include "globals.h"
 

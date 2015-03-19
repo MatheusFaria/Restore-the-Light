@@ -49,9 +49,9 @@ public:
     static std::list<Light *> getDirectionalLights();
 
 private:
-    static std::list<Light *> LightManager::pointLights;
-    static std::list<Light *> LightManager::spotLights;
-    static std::list<Light *> LightManager::directionalLights;
+    static std::list<Light *> pointLights;
+    static std::list<Light *> spotLights;
+    static std::list<Light *> directionalLights;
 };
 
 #endif

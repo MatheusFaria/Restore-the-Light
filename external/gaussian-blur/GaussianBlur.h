@@ -36,6 +36,7 @@
 #include <vector>
 #include <string>
 #include <stdarg.h>
+#include <math.h>
 
 inline std::string stringFormatA( const char * fmt, ... )
 {

@@ -27,13 +27,13 @@ void Light::load(const GLint posHandle, const GLint dirHandle, const GLint color
     const GLint fallOffHandle, const GLint cutOffAngleHandle){
     glUniform4f(posHandle, pos.x, pos.y, pos.z, type);
     glUniform3f(dirHandle, dir.x, dir.y, dir.z);
-    glUniform3f(colorHandle, color.r, color.g, color.b);
+    glUniform3f(colorHandle, color.x, color.y, color.z);
     glUniform3f(fallOffHandle, fallOff.x, fallOff.y, fallOff.z);
     glUniform1f(cutOffAngleHandle, cutOffAngle*3.141592f/ 180.0f);
 }
 
 float Light::lightAreaRadius(){
-    float C = std::max(color.r, std::max(color.g, color.b));
+    float C = std::max(color.x, std::max(color.y, color.z));
     float I = 0.0001f;
     if (fallOff.z == 0.0f){
         if (fallOff.y == 0.0f){

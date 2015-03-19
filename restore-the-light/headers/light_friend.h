@@ -59,7 +59,7 @@ public:
         bindElements();
 
         Material::SetMaterial(Material::GOLD, shader);
-        glUniform3f(shader->getHandle("UeColor"), light->color.r, light->color.g, light->color.b);
+        glUniform3f(shader->getHandle("UeColor"), light->color.x, light->color.y, light->color.z);
 
         glUniform1i(shader->getHandle("uCompleteGlow"), 1);
 

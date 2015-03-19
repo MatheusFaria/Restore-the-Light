@@ -465,7 +465,7 @@ private:
         lefteyelid = 4, righteyelid = 5, leftthigh = 6, rightthigh = 7,
         leftfoot = 8, rightfoot = 9;
 
-    Object3D * shotHit = nullptr;
+    Object3D * shotHit = NULL;
 
     bool differentShot(Object3D * obj){
         return shotHit != obj;
