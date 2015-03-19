@@ -1,6 +1,6 @@
 # CMake entry point
 cmake_minimum_required (VERSION 2.6)
-project (Restore_the_Light)
+project (restore_the_light)
 
 # CMakeLists modified from: http://www.opengl-tutorial.org/download/
 
@@ -34,8 +34,8 @@ endif(INCLUDE_DISTRIB)
 
 
 include_directories(
-	external/glfw-3.0.3/include/GLFW/
-	external/glm/
+	external/glfw-3.0.3/include/
+	external/
 	external/glew-1.9.0/include/
 	external/gaussian-blur/
 	restore-the-light/headers/
@@ -111,12 +111,12 @@ add_executable(restore-the-light
 	restore-the-light/shaders/geometry-pass-map-vertex.glsl
 	restore-the-light/shaders/geometry-pass-map-texture-fragment.glsl
 	restore-the-light/shaders/geometry-pass-map-texture-vertex.glsl
-	restore-the-light/shaders/get-glow-spots-fragment.glsl
 	restore-the-light/shaders/light-ambient-fragment.glsl
 	restore-the-light/shaders/light-point-fragment.glsl
 	restore-the-light/shaders/light-spot-fragment.glsl
 	restore-the-light/shaders/light-directional-fragment.glsl
 	restore-the-light/shaders/light-vertex.glsl
+	restore-the-light/shaders/multiply-two-textures-fragment.glsl
 	restore-the-light/shaders/sum-two-textures-fragment.glsl
 	restore-the-light/shaders/texture-fragment.glsl
 	restore-the-light/shaders/texture-vertex.glsl
