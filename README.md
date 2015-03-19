@@ -118,6 +118,17 @@ In my application I used the 2-step Gaussian Blur Algorithm and the texture map 
 Controls
 --------
 
+- 1: FPS Camera
+- 2: Isometric Camera
+- W, A, S, D: moves the hero
+- Left Mouse Click: shots
+- ESC: Exits
+
+**Debug Controls:**
+- 0: Free FPS movement
+- G: Turn the ground on
+- H: Turn the ground off
+
 Libraries
 ---------
 - GLFW
