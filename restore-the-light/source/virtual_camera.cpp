@@ -7,8 +7,8 @@
 #define GLM_FORCE_PURE
 #include "glm/gtc/matrix_transform.hpp"
 
-Cam::Cam() : Cam(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f)){
-}
+Cam::Cam()
+    : eye(glm::vec3(0.0f)), lookAt(glm::vec3(0.0f)), upVector(glm::vec3(0.0f)){}
 
 Cam::Cam(glm::vec3 _eye, glm::vec3 _lookAt, glm::vec3 _upVector):
 eye(_eye), lookAt(_lookAt), upVector(_upVector){

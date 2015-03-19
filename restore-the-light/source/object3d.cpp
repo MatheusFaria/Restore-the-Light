@@ -9,7 +9,7 @@
 #include "GLSL.h"
 #include "virtual_camera.h"
 
-Object3D::Object3D() : Object3D(NULL, NULL){
+Object3D::Object3D() : mesh(NULL), shader(NULL) {
 }
 
 Object3D::Object3D(Mesh * _mesh, Shader * _shader) : mesh(_mesh), shader(_shader) {

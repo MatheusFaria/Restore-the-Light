@@ -4,24 +4,23 @@
 #include <iostream>
 
 Light::Light() 
-    : Light(glm::vec3(1), glm::vec3(0), glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), 360.0f, UNDEFINED){}
+    : color(glm::vec3(1)), pos(glm::vec3(0)), dir(glm::vec3(0, 0, 0)), fallOff(glm::vec3(1, 0, 0)), cutOffAngle(360.0f), type(UNDEFINED){}
 
 // Directional Light Constructor
 Light::Light(glm::vec3 _color, glm::vec3 _dir) 
-    : Light(_color, glm::vec3(0), _dir, glm::vec3(1, 0, 0), 360.0f, Light::DIRECTIONAL){}
+    : color(_color), pos(glm::vec3(0)), dir(_dir), fallOff(glm::vec3(1, 0, 0)), cutOffAngle(360.0f), type(Light::DIRECTIONAL){}
 
 // Point Light Constructor
 Light::Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _fallOff) 
-    : Light(_color, _pos, glm::vec3(0, 0, 0), _fallOff, 360.0f, POINT_LIGHT){}
+    : color(_color), pos(_pos), dir(glm::vec3(0, 0, 0)), fallOff(_fallOff), cutOffAngle(360.0f), type(POINT_LIGHT){}
 
 // Spot Light Constructor
 Light::Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _dir, glm::vec3 _fallOff, float _cutOffAngle)
-    : Light(_color, _pos, _dir, _fallOff, _cutOffAngle, SPOT_LIGHT){}
+    : color(_color), pos(_pos), dir(_dir), fallOff(_fallOff), cutOffAngle(_cutOffAngle), type(SPOT_LIGHT){}
 
 Light::Light(glm::vec3 _color, glm::vec3 _pos, glm::vec3 _dir, 
-    glm::vec3 _fallOff, float _cutOffAngle, int _type) :
-    color(_color), pos(_pos), dir(_dir), fallOff(_fallOff), cutOffAngle(_cutOffAngle), type(_type){
-}
+    glm::vec3 _fallOff, float _cutOffAngle, int _type) 
+    : color(_color), pos(_pos), dir(_dir), fallOff(_fallOff), cutOffAngle(_cutOffAngle), type(_type){}
 
 void Light::load(const GLint posHandle, const GLint dirHandle, const GLint colorHandle,
     const GLint fallOffHandle, const GLint cutOffAngleHandle){

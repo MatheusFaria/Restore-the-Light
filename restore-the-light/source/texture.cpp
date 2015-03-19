@@ -2,7 +2,7 @@
 
 #include "load_manager.h"
 
-Texture::Texture() : Texture(NULL){}
+Texture::Texture() : img(NULL){}
 Texture::Texture(Image * _img) : img(_img){}
 
 void Texture::load(){
@@ -20,7 +20,7 @@ void Texture::load(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glBindTexture(GL_TEXTURE_2D, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLuint Texture::getTexture(){
