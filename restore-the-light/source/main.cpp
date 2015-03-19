@@ -485,6 +485,7 @@ int main(int argc, char **argv)
             }
 
             gBuffer->pass(objs);
+            //gBuffer->displayTexture(hot_key);
 
             lightProcessor->pass(gBuffer, LightManager::getPointLights(), 
                 LightManager::getSpotLights(), LightManager::getDirectionalLights());
@@ -494,9 +495,11 @@ int main(int argc, char **argv)
                 gBuffer->getOutFBO()->getTexture(0), 
                 lightProcessor->getOutFBO()->getTexture(0),
                 LoadManager::getShader("texture-vertex.glsl", "get-glow-spots-fragment.glsl"));
+            //alphaPost->displayTexture(0);
 
             blurPost->passBlur(alphaPost, 2,
                 LoadManager::getShader("texture-vertex.glsl", "blur-fragment.glsl"));
+            //blurPost->displayTexture(0);
 
             bloomPost->passBinaryTextureOp(
                 blurPost->getOutFBO()->getTexture(0), 

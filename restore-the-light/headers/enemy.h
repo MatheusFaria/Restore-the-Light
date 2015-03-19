@@ -89,9 +89,6 @@ public:
         for (int i = 0; i < parts.size(); i++){
             parts[i]->init();
         }
-        x = -0.19;
-        y = -0.74;
-        z = 0.27;
 
         tex = TextureManager::getTexture("enemy.bmp")->getTexture();
         texShot = TextureManager::getTexture("enemy-shot.bmp")->getTexture();
@@ -108,7 +105,7 @@ public:
 
         Material::SetMaterial(Material::BLUE_PLASTIC, shader, false, false);
 
-        if (finished){
+        if (life < 2.0f){
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texShot);
             glUniform1i(shader->getHandle("uTexID"), 0);
@@ -117,13 +114,18 @@ public:
             glBindTexture(GL_TEXTURE_2D, atexShot);
             glUniform1i(shader->getHandle("uAlphaTexID"), 1);
 
-            double timePercent = (glfwGetTime() - deathTime) / howLongToDie;
-            if (timePercent >= 1.0){
-                timePercent = 1.0;
-                removeEnemy = true;
-            }
+            if (life == 0.0f){
+                double timePercent = (glfwGetTime() - deathTime) / howLongToDie;
+                if (timePercent >= 1.0){
+                    timePercent = 1.0;
+                    removeEnemy = true;
+                }
 
-            glUniform3f(shader->getHandle("UeColor"), timePercent, timePercent, timePercent);
+                glUniform3f(shader->getHandle("UeColor"), timePercent, timePercent, timePercent);
+            }
+            else{
+                glUniform3f(shader->getHandle("UeColor"), 0, 0, 0);
+            }
         }
         else{
             glActiveTexture(GL_TEXTURE0);
@@ -138,7 +140,7 @@ public:
         }
 
 
-        glUniform1i(shader->getHandle("uCompleteGlow"), 1);
+        glUniform1i(shader->getHandle("uCompleteGlow"), 0);
 
         bindUniformMatrix4f(
             shader->getHandle("uProjMatrix"),
@@ -371,8 +373,13 @@ public:
         if (finished)
             return;
 
-        if (obj->getCollisionTypeMask() == 3){
-            kill();
+        
+        if (obj->getCollisionTypeMask() == 3 && differentShot(obj)){
+            shotHit = obj;
+            life -= 1.0f;
+            if (life == 0.0f){
+                kill();
+            }
         }
     }
 
@@ -430,47 +437,18 @@ public:
         }
     }
 
-    void checkInput(GLFWwindow * window){
-
-        if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS){
-            z += 0.01;
-            std::cout << x << " " << y << " " << z << std::endl;
-        }
-        if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS){
-            z -= 0.01;
-            std::cout << x << " " << y << " " << z << std::endl;
-        }
-        if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS){
-            y += 0.01;
-            std::cout << x << " " << y << " " << z << std::endl;
-        }
-        if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
-            y -= 0.01;
-            std::cout << x << " " << y << " " << z << std::endl;
-        }
-        if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS){
-            x += 0.01;
-            std::cout << x << " " << y << " " << z << std::endl;
-        }
-        if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS){
-            x -= 0.01;
-            std::cout << x << " " << y << " " << z << std::endl;
-        }
-    }
-
 
     bool isDead(){
         return removeEnemy;
     }
 
 private:
-    float z, y, x;
-
     GameMap * gameMap;
     int currentCube;
     std::vector<BodyPart *> parts;
     bool finished = false;
     double deathTime, howLongToDie = 1.0;
+    float life = 2;
     bool removeEnemy = false;
 
     glm::vec3 pos, direction;
@@ -487,6 +465,11 @@ private:
         lefteyelid = 4, righteyelid = 5, leftthigh = 6, rightthigh = 7,
         leftfoot = 8, rightfoot = 9;
 
+    Object3D * shotHit = nullptr;
+
+    bool differentShot(Object3D * obj){
+        return shotHit != obj;
+    }
 
     void enablePartArrays(int part){
         parts[part]->enableAttrArray3f("aPosition", "posBufObj");

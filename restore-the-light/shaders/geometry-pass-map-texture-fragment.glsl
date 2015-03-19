@@ -55,13 +55,16 @@ void main()
 	
 	if(uCompleteGlow == 1)
 		gl_FragData[1] = texel;
-	else
+	else{
 		gl_FragData[1] = alphaTexel;
+	}
 
 	gl_FragData[2] = vec4(vVertexPos, 1);
 	gl_FragData[3] = vec4(normalize(vNormal), 1);
 
 	gl_FragData[4] = vec4(UsColor, Ushine);
 
-	gl_FragData[5] = vec4(vec3(UaColor + UeColor), 1);
+	vec3 Ie = vec3(alphaTexel*texel) + UeColor;
+
+	gl_FragData[5] = vec4(vec3(UaColor + Ie), 1);
 }

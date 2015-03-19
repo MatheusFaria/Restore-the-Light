@@ -22,5 +22,5 @@ void main()
 	vec4 diffusedAlphaTex = alphaMapTex*diffuseTex;
 	vec4 alphaLightTex = vec4(alphaMap(vec3(lightTex)), 1);
 
-	gl_FragData[0] = alphaLightTex*diffusedAlphaTex;
+	gl_FragData[0] = alphaMapTex*lightTex;
 }

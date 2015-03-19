@@ -5,7 +5,7 @@ namespace Global{
     const int screenHeight = 600;
     const int screenWidth = 600;
 
-    const int gaussKernelSize = 27;
+    const int gaussKernelSize = 17;
 
     const std::string gameName = "Restore the Light";
 
