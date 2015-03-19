@@ -1,6 +1,8 @@
 #ifndef __LIGHT_FRIEND_H__
 #define __LIGHT_FRIEND_H__
 
+#include <stdlib.h>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_PURE
 #include "glm/glm.hpp"

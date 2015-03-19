@@ -35,7 +35,7 @@ endif(INCLUDE_DISTRIB)
 
 include_directories(
 	external/glfw-3.0.3/include/
-	external/
+	external/glm/
 	external/glew-1.9.0/include/
 	external/gaussian-blur/
 	restore-the-light/headers/
