@@ -12,10 +12,11 @@ Table of Contents
   - [Framebuffer Objects]
   - [Deferred Lighting]
   - [Bloom Shader]
-2. [Libraries]
-3. [Platforms]
-4. [How to Install]
-5. [Credits and Contacts]
+2. [Controls]
+3. [Libraries]
+4. [Platforms]
+5. [How to Install]
+6. [Credits and Contacts]
 
 Implemented Concepts
 --------------------
@@ -90,6 +91,32 @@ Another downside is the handle the use of different materials, because to handle
 
 ####Bloom Shader
 
+The Bloom shader gives to images the glow effect, or bloom effect. It is very useful because gives you a glossy effect to you scene, and with some adaptation you can produce the HDR effect. The basic idea behind the bloom is to blur the parts of the image that will glow, you can select those parts by alpha mapping them, and sum the blur result to the scene without blur.
+
+![Bloom Process](/screenshots/bloom-process.jpg)
+
+To blur your image you have to do a calculation per pixel averaging the color around that pixel. One of the most know algorithms for this is the [Gaussian Blur Algorithm], which uses the same basic idea, but it also uses a specific weight matrix, called Convolution Kernel. During the blur process, you will run through this matrix summing the averages. This process can be very expensive depending on the size of the matrix, because its complexity is O(n²).
+
+To improve your performance when you are using the [Gaussian Blur Algorithm], is to use the 2-step Gaussian Blur Algorithm. In this algorithm you will have to perform two blur passes to blur your image. One pass is the horizontal blur and the other is the vertical. As the [Intel Developer Zone] shows in its article, this technique will speed up your blur process, even doing two passes, and will produce the exact same effect. And your complexity will be reduced to O(2n). (The whole 2-step Gaussian Blur takes two passes to run, but I will refer to those two passes as one from now on.)
+
+Sometimes one pass of the blur algorithm is not enough, especially if you want your blur to be stronger. Of course you can perform more than one pass, but performing multiple passes can be very expensive, especially if you are switching the main framebuffer object at every pass. To reduce the time spent with multiple passes you can reduce the blur area by decreasing the resolution of the screen in a half, or even in a quarter. This will shrink the size of your textures and the number of pixels that will be rasterized in the blur pass. However, the quality of your blur will decrease, but it also produces a really good blur.
+
+![Screen Blur](/screenshots/blur-screen.jpg)
+
+To determine the areas that are going to glow, you need to create an alpha map of those areas. And one pretty simple technique to create alpha maps is to grey scale the whole image, and output the non-grey scaled pixel color for pixels that are greater than a determined grey value, and black color for the others. However, when you have a complex texture that you want glow, this technique can fail because it you ignore darker color, like blue. If you want to indicate the specific areas that you want to glow, even being very dark, you need to create an alpha texture. Which you can create by editing your texture image and creating an image that just represents the areas that will glow. This technique is very useful, as point by Greg James and Jhon O'Rorke in the article [Real-Time Glow], because is artist friendly, which means that you don't need to program it and gives more freedom to the artist. And it also gives amazing result to detailed textures.
+
+![Detailed Bloom Texture](/screenshots/texture-alpha-map.jpg)
+
+In my application I used the 2-step Gaussian Blur Algorithm and the texture map technique. But, as the [Intel Developer Zone] shows in their studies, this algorithm is not the fastest blur algorithm. However, I didn't have performance problems with the algorithm that I am using, so I chose to not change my algorithm.
+
+**Reference:**
+- [Intel Developer Zone - An investigation of fast real-time GPU-based image blur algorithms]
+- [Greg James and Jhon O'Rorke - Real-Time Glow]
+- [Philip Rideout - OpenGL Bloom Tutorial]
+
+
+Controls
+--------
 
 Libraries
 ---------
@@ -135,6 +162,7 @@ Credits and Contacts
 [Framebuffer Object]:#framebuffer-objects
 [Implented Concepts]:#implemented-concepts
 [Deferred Lighting]:#deferred-lighting
+[Controls]:#controls
 [Bloom Shader]:#bloom-shader
 [Libraries]:#libraries
 [Platforms]:#platforms
@@ -151,3 +179,9 @@ Credits and Contacts
 [Neuro Production - Making a 3D Game with OpenGL: Deferred shading and stuff]:http://www.neuroproductions.be/opengl/making-a-3d-game-with-opengl-deferred-shading-and-stuff/
 [Fabio Policarpo and Francisco Fonseca - Deferred Shading Tutorial]:http://gamedevs.org/uploads/deferred-shading-tutorial.pdf
 [OpenGL - glTexImage2D Formats]:https://www.opengl.org/sdk/docs/man/html/glTexImage2D.xhtml
+[Gaussian Blur Algorithm]:http://en.wikipedia.org/wiki/Gaussian_blur
+[Intel Developer Zone]:https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms
+[Real-Time Glow]:http://www.gamasutra.com/view/feature/2107/realtime_glow.php
+[Intel Developer Zone - An investigation of fast real-time GPU-based image blur algorithms]: https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms
+[Greg James and Jhon O'Rorke - Real-Time Glow]: http://www.gamasutra.com/view/feature/2107/realtime_glow.php
+[Philip Rideout - OpenGL Bloom Tutorial]: http://prideout.net/archive/bloom/
