@@ -189,11 +189,11 @@ bool installShaders(){
 
 
     string handles7[] = {
-        "aPosition", "uTex1ID", "uTex2ID", "uTex3ID"};
+        "aPosition", "uTex1ID", "uTex2ID"};
     ret = ret && loadShaderWithHandles(
         "texture-vertex.glsl",
-        "get-glow-spots-fragment.glsl",
-        handles7, 4);
+        "multiply-two-textures-fragment.glsl",
+        handles7, 3);
 
 
     string handles8[] = {
@@ -285,7 +285,7 @@ void createGaussBlurShader(){
 }
 
 void setupWorld(){
-    createGaussBlurShader();
+    //createGaussBlurShader();
 
     if (!installShaders()){
         std::cerr << "Error Loading Shaders\n";
@@ -490,11 +490,10 @@ int main(int argc, char **argv)
             lightProcessor->pass(gBuffer, LightManager::getPointLights(), 
                 LightManager::getSpotLights(), LightManager::getDirectionalLights());
 
-            alphaPost->passTernaryTextureOp(
+            alphaPost->passBinaryTextureOp(
                 gBuffer->getOutFBO()->getTexture(1),
-                gBuffer->getOutFBO()->getTexture(0), 
                 lightProcessor->getOutFBO()->getTexture(0),
-                LoadManager::getShader("texture-vertex.glsl", "get-glow-spots-fragment.glsl"));
+                LoadManager::getShader("texture-vertex.glsl", "multiply-two-textures-fragment.glsl"));
             //alphaPost->displayTexture(0);
 
             blurPost->passBlur(alphaPost, 2,
